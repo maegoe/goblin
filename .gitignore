@@ -1,0 +1,7 @@
+build/
+.rokit/
+.DS_Store
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx

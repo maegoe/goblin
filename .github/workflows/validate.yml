@@ -1,0 +1,36 @@
+name: Validate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rokit
+        shell: bash
+        run: |
+          curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+
+      - name: Install project tools
+        shell: bash
+        run: rokit install
+
+      - name: Build place
+        shell: bash
+        run: |
+          mkdir -p build
+          rojo build default.project.json -o build/game.rbxl
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-rbxl
+          path: build/game.rbxl
+          if-no-files-found: error
