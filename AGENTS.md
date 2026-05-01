@@ -17,3 +17,9 @@ Do not broaden the current version with new systems, test harnesses, automation,
 Use Roblox Studio MCP for QA testing when possible. Prefer opening the built place in Roblox Studio, starting/stopping Play, reading console output, and inspecting runtime state through the MCP tools before asking for manual verification.
 
 Keep QA focused on the current roadmap version's completion criteria. Do not add new test harnesses or automation code unless that work is explicitly in scope for the current version.
+
+## Work Logging
+
+After completing any implementation, QA, documentation, or planning work, always update Confluence before considering the task done.
+
+Record the work in `CHANGELOG`, and also update the relevant roadmap version page or version-specific work page with the result, status, and checklist changes. If the work changes scope, implementation status, QA status, or follow-up tasks, make that explicit in the related Confluence page.
