@@ -13,9 +13,41 @@ local states = {}
 local statsRemote
 local choicesRemote
 local statsAccumulator = 0
+local LEVEL_UP_CHOICE_COUNT = 3
 
 local function getExperienceToNextLevel(level)
 	return PlayerDefaults.ExperienceToNextLevel + ((level - 1) * PlayerDefaults.ExperienceGrowth)
+end
+
+local function canOfferUpgrade(state, definition)
+	if definition.EffectType == "Heal" then
+		return state.Health < state.MaxHealth
+	end
+
+	return true
+end
+
+local function getRandomUpgradeChoices(state)
+	local pool = {}
+	for _, upgradeId in ipairs(UpgradeDefinitions.Order) do
+		local definition = UpgradeDefinitions[upgradeId]
+		if definition and canOfferUpgrade(state, definition) then
+			table.insert(pool, upgradeId)
+		end
+	end
+
+	for index = #pool, 2, -1 do
+		local swapIndex = math.random(index)
+		pool[index], pool[swapIndex] = pool[swapIndex], pool[index]
+	end
+
+	local choices = {}
+	local choiceCount = math.min(LEVEL_UP_CHOICE_COUNT, #pool)
+	for index = 1, choiceCount do
+		table.insert(choices, pool[index])
+	end
+
+	return choices
 end
 
 local function createState()
@@ -40,7 +72,7 @@ local function processLevelUps(player, state)
 		state.Experience -= state.ExperienceToNextLevel
 		state.Level += 1
 		state.ExperienceToNextLevel = getExperienceToNextLevel(state.Level)
-		PlayerStateService.setPendingChoices(player, UpgradeDefinitions.Order)
+		PlayerStateService.setPendingChoices(player, getRandomUpgradeChoices(state))
 	end
 end
 
@@ -132,6 +164,33 @@ function PlayerStateService.damagePlayer(player, amount)
 	PlayerStateService.publish(player)
 end
 
+local function applyUpgradeDefinition(state, definition)
+	if definition.EffectType == "IncreaseMaxHealth" then
+		state.MaxHealth += definition.Value
+		state.Health = math.min(state.MaxHealth, state.Health + definition.Value)
+		return
+	end
+
+	if definition.EffectType == "Heal" then
+		state.Health = math.min(state.MaxHealth, state.Health + definition.Value)
+		return
+	end
+
+	if not definition.StatKey then
+		return
+	end
+
+	local nextValue = state[definition.StatKey] + definition.Value
+	if definition.MinValue then
+		nextValue = math.max(definition.MinValue, nextValue)
+	end
+	if definition.MaxValue then
+		nextValue = math.min(definition.MaxValue, nextValue)
+	end
+
+	state[definition.StatKey] = nextValue
+end
+
 function PlayerStateService.setPendingChoices(player, choiceIds)
 	local state = states[player]
 	if not state or state.PendingChoices then
@@ -186,12 +245,7 @@ function PlayerStateService.applyUpgrade(player, upgradeId)
 		return false
 	end
 
-	local nextValue = state[definition.StatKey] + definition.Value
-	if definition.MinValue then
-		nextValue = math.max(definition.MinValue, nextValue)
-	end
-
-	state[definition.StatKey] = nextValue
+	applyUpgradeDefinition(state, definition)
 	state.PendingChoices = nil
 	processLevelUps(player, state)
 

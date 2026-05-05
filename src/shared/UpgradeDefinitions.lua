@@ -3,6 +3,7 @@ local UpgradeDefinitions = {
 		Id = "AttackDamageUp",
 		DisplayName = "Attack Damage Up",
 		Description = "+8 attack damage",
+		Category = "Attack",
 		StatKey = "AttackDamage",
 		Value = 8,
 		Stackable = true,
@@ -11,6 +12,7 @@ local UpgradeDefinitions = {
 		Id = "AttackSpeedUp",
 		DisplayName = "Attack Speed Up",
 		Description = "-0.12s attack interval",
+		Category = "Attack",
 		StatKey = "AttackInterval",
 		Value = -0.12,
 		MinValue = 0.35,
@@ -20,8 +22,27 @@ local UpgradeDefinitions = {
 		Id = "MoveSpeedUp",
 		DisplayName = "Move Speed Up",
 		Description = "+2 movement speed",
+		Category = "Move",
 		StatKey = "MoveSpeed",
 		Value = 2,
+		Stackable = true,
+	},
+	MaxHealthUp = {
+		Id = "MaxHealthUp",
+		DisplayName = "Max Health Up",
+		Description = "+20 max health",
+		Category = "Survival",
+		EffectType = "IncreaseMaxHealth",
+		Value = 20,
+		Stackable = true,
+	},
+	QuickRecovery = {
+		Id = "QuickRecovery",
+		DisplayName = "Quick Recovery",
+		Description = "Recover 30 health",
+		Category = "Survival",
+		EffectType = "Heal",
+		Value = 30,
 		Stackable = true,
 	},
 }
@@ -30,6 +51,8 @@ UpgradeDefinitions.Order = {
 	"AttackDamageUp",
 	"AttackSpeedUp",
 	"MoveSpeedUp",
+	"MaxHealthUp",
+	"QuickRecovery",
 }
 
 return UpgradeDefinitions
