@@ -36,6 +36,28 @@ Keep QA focused on the current roadmap version's completion criteria. Do not add
 
 Record QA results on the relevant Jira issue as well as in Confluence. Bugs found during QA should be created or linked in Jira and classified against the Confluence bug severity and scope rules before implementation.
 
+## Git Branch Strategy
+
+Use `main` as the stable release and deployment branch. Do not commit directly to `main` unless the user explicitly requests it or an emergency hotfix process requires it.
+
+Use `dev` as the active integration branch for the current roadmap version. Start normal implementation, QA support, and documentation branches from an up-to-date `dev`.
+
+Create a short-lived working branch for each scoped task and include the Jira key in the branch name. Use these prefixes:
+
+* `feat/KAN-123-short-name` for feature implementation
+* `fix/KAN-123-short-name` for bug fixes
+* `docs/KAN-123-short-name` for documentation-only changes
+* `qa/KAN-123-short-name` for QA instrumentation or verification support
+* `hotfix/KAN-123-short-name` for urgent fixes branched from `main`
+
+Before switching branches, merging, rebasing, or pulling, check the worktree status and do not overwrite user changes. If unrelated dirty files exist, leave them alone and continue only when the requested work can be isolated safely.
+
+Merge working branches back to `dev` after the relevant code, QA notes, Confluence updates, CHANGELOG entry, and Jira updates are complete. Merge `dev` to `main` only at release or deployment checkpoints that are reflected in Confluence and Jira.
+
+For hotfixes, branch from `main`, keep the fix narrowly scoped, update Confluence/Jira/CHANGELOG, merge to `main`, then bring the same fix back into `dev` so the active development branch does not regress.
+
+Do not force-push, rewrite shared history, delete remote branches, or rebase branches other people may be using unless the user explicitly asks for that operation.
+
 ## Work Logging
 
 After completing any implementation, QA, documentation, or planning work, always update Confluence before considering the task done.
