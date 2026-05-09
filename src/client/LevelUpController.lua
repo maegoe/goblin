@@ -11,6 +11,14 @@ local overlay
 local buttons = {}
 local buttonConnections = {}
 
+local function toColor3(color)
+	if typeof(color) == "table" then
+		return Color3.fromRGB(color[1] or 255, color[2] or 255, color[3] or 255)
+	end
+
+	return Color3.fromRGB(255, 255, 255)
+end
+
 local function createButton(parent, index)
 	local button = Instance.new("TextButton")
 	button.Name = "Choice" .. index
@@ -73,7 +81,8 @@ local function showChoices(choices)
 		local choice = choices[index]
 		if choice then
 			button.Visible = true
-			button.Text = string.format("%s\n%s", choice.displayName, choice.description)
+			button.TextColor3 = toColor3(choice.rarityColor)
+			button.Text = string.format("[%s] %s\n%s", choice.rarityLabel, choice.displayName, choice.description)
 
 			buttonConnections[index] = button.Activated:Connect(function()
 				overlay.Enabled = false
@@ -84,6 +93,7 @@ local function showChoices(choices)
 				Remotes.get(Remotes.Names.SelectUpgrade):FireServer(choice.id)
 			end)
 		else
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
 			button.Visible = false
 		end
 	end
