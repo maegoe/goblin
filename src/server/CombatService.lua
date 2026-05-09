@@ -1,5 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -28,6 +30,56 @@ local function getProjectileFolder()
 	end
 
 	return projectileFolder
+end
+
+local function createExplosionFeedback(position, radius)
+	local feedback = Instance.new("Part")
+	feedback.Name = "ExplosionFeedback"
+	feedback.Anchored = true
+	feedback.CanCollide = false
+	feedback.CanQuery = false
+	feedback.CanTouch = false
+	feedback.Material = Enum.Material.SmoothPlastic
+	feedback.Color = Color3.fromRGB(255, 196, 64)
+	feedback.Transparency = 0.95
+	feedback.Size = Vector3.new(radius * 0.25, 0.1, radius * 0.25)
+	feedback.Position = position + Vector3.new(0, 0.15, 0)
+	feedback.Parent = getProjectileFolder()
+
+	local decal = Instance.new("Decal")
+	decal.Name = "ExplosionImage"
+	decal.Face = Enum.NormalId.Top
+	decal.Texture = WeaponDefinitions.BasicBolt.ExplosionFeedbackImage
+	decal.Transparency = 0.05
+	decal.Parent = feedback
+
+	local duration = WeaponDefinitions.BasicBolt.ExplosionFeedbackDuration
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(feedback, tweenInfo, {
+		Size = Vector3.new(radius * 2, 0.1, radius * 2),
+		Transparency = 1,
+	}):Play()
+	TweenService:Create(decal, tweenInfo, {
+		Transparency = 1,
+	}):Play()
+
+	Debris:AddItem(feedback, duration + 0.1)
+end
+
+local function applyExplosion(player, position, directHitEnemy, directDamage)
+	local state = PlayerStateService.getState(player)
+	local explosion = state and state.ExplosiveBolt
+	if not explosion then
+		return
+	end
+
+	local damage = math.max(1, math.floor((directDamage * explosion.DamageMultiplier) + 0.5))
+	for _, enemy in ipairs(EnemyService.getEnemiesInRadius(position, explosion.Radius, directHitEnemy)) do
+		local killInfo = EnemyService.damage(enemy, damage)
+		ExperienceService.awardKill(player, killInfo)
+	end
+
+	createExplosionFeedback(position, explosion.Radius)
 end
 
 local function createProjectile(player, target, damage, speed)
@@ -74,8 +126,10 @@ local function updateProjectiles(deltaTime)
 		local direction = targetPosition - projectile.Position
 
 		if direction.Magnitude <= 2.5 then
+			local impactPosition = data.Target.Position
 			local killInfo = EnemyService.damage(data.Target, data.Damage)
 			ExperienceService.awardKill(data.Owner, killInfo)
+			applyExplosion(data.Owner, impactPosition, data.Target, data.Damage)
 			projectiles[projectile] = nil
 			projectile:Destroy()
 			continue

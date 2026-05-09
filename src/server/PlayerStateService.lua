@@ -24,6 +24,11 @@ local function canOfferUpgrade(state, definition)
 		return state.Health < state.MaxHealth
 	end
 
+	if definition.MaxStacks then
+		local currentStacks = state.Upgrades[definition.Id] or 0
+		return currentStacks < definition.MaxStacks
+	end
+
 	return true
 end
 
@@ -64,6 +69,8 @@ local function createState()
 		SurvivalTime = 0,
 		Alive = true,
 		PendingChoices = nil,
+		Upgrades = {},
+		ExplosiveBolt = nil,
 	}
 end
 
@@ -173,6 +180,20 @@ local function applyUpgradeDefinition(state, definition)
 
 	if definition.EffectType == "Heal" then
 		state.Health = math.min(state.MaxHealth, state.Health + definition.Value)
+		return
+	end
+
+	if definition.EffectType == "EnableExplosiveBolt" then
+		local currentStacks = state.Upgrades[definition.Id] or 0
+		if definition.MaxStacks and currentStacks >= definition.MaxStacks then
+			return
+		end
+
+		state.Upgrades[definition.Id] = currentStacks + 1
+		state.ExplosiveBolt = {
+			Radius = definition.ExplosionRadius,
+			DamageMultiplier = definition.ExplosionDamageMultiplier,
+		}
 		return
 	end
 

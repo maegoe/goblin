@@ -45,6 +45,17 @@ local UpgradeDefinitions = {
 		Value = 30,
 		Stackable = true,
 	},
+	ExplosiveBolt = {
+		Id = "ExplosiveBolt",
+		DisplayName = "Explosive Bolt",
+		Description = "Basic bolts explode for 45% damage",
+		Category = "Attack",
+		EffectType = "EnableExplosiveBolt",
+		ExplosionRadius = 14,
+		ExplosionDamageMultiplier = 0.45,
+		Stackable = false,
+		MaxStacks = 1,
+	},
 }
 
 UpgradeDefinitions.Order = {
@@ -53,6 +64,7 @@ UpgradeDefinitions.Order = {
 	"MoveSpeedUp",
 	"MaxHealthUp",
 	"QuickRecovery",
+	"ExplosiveBolt",
 }
 
 return UpgradeDefinitions
