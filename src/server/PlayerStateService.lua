@@ -32,6 +32,95 @@ local function canOfferUpgrade(state, definition)
 	return true
 end
 
+local function chooseRarity()
+	local rarityConfig = UpgradeDefinitions.Rarity
+	local totalWeight = 0
+
+	for _, rarity in ipairs(rarityConfig.Order) do
+		totalWeight += rarityConfig.Weights[rarity] or 0
+	end
+
+	if totalWeight <= 0 then
+		return rarityConfig.Order[1]
+	end
+
+	local roll = math.random() * totalWeight
+	local cursor = 0
+	for _, rarity in ipairs(rarityConfig.Order) do
+		cursor += rarityConfig.Weights[rarity] or 0
+		if roll <= cursor then
+			return rarity
+		end
+	end
+
+	return rarityConfig.Order[1]
+end
+
+local function getRarityDisplay(rarity)
+	local display = UpgradeDefinitions.Rarity.Display[rarity] or UpgradeDefinitions.Rarity.Display.common
+
+	return display.Label, display.Color
+end
+
+local function getUpgradeValue(definition, rarity)
+	local multiplier = UpgradeDefinitions.Rarity.ValueMultipliers[rarity] or 1
+	local value = definition.Value * multiplier
+
+	if value % 1 == 0 then
+		return value
+	end
+
+	return math.floor((value * 100) + 0.5) / 100
+end
+
+local function formatSignedValue(value)
+	local text
+	if value % 1 == 0 then
+		text = tostring(value)
+	else
+		text = string.format("%.2f", value):gsub("0+$", ""):gsub("%.$", "")
+	end
+
+	if value > 0 then
+		return "+" .. text
+	end
+
+	return text
+end
+
+local function formatDescription(definition, value)
+	if definition.DescriptionTemplate then
+		if definition.EffectType == "Heal" then
+			return string.format(definition.DescriptionTemplate, tostring(math.abs(value)))
+		end
+
+		return string.format(definition.DescriptionTemplate, formatSignedValue(value))
+	end
+
+	return definition.Description
+end
+
+local function createUpgradeChoice(upgradeId)
+	local definition = UpgradeDefinitions[upgradeId]
+	if not definition then
+		return nil
+	end
+
+	local rarity = chooseRarity()
+	local rarityLabel, rarityColor = getRarityDisplay(rarity)
+	local value = getUpgradeValue(definition, rarity)
+
+	return {
+		id = definition.Id,
+		displayName = definition.DisplayName,
+		description = formatDescription(definition, value),
+		rarity = rarity,
+		rarityLabel = rarityLabel,
+		rarityColor = rarityColor,
+		value = value,
+	}
+end
+
 local function getRandomUpgradeChoices(state)
 	local pool = {}
 	for _, upgradeId in ipairs(UpgradeDefinitions.Order) do
@@ -49,7 +138,10 @@ local function getRandomUpgradeChoices(state)
 	local choices = {}
 	local choiceCount = math.min(LEVEL_UP_CHOICE_COUNT, #pool)
 	for index = 1, choiceCount do
-		table.insert(choices, pool[index])
+		local choice = createUpgradeChoice(pool[index])
+		if choice then
+			table.insert(choices, choice)
+		end
 	end
 
 	return choices
@@ -171,15 +263,15 @@ function PlayerStateService.damagePlayer(player, amount)
 	PlayerStateService.publish(player)
 end
 
-local function applyUpgradeDefinition(state, definition)
+local function applyUpgradeDefinition(state, definition, value)
 	if definition.EffectType == "IncreaseMaxHealth" then
-		state.MaxHealth += definition.Value
-		state.Health = math.min(state.MaxHealth, state.Health + definition.Value)
+		state.MaxHealth += value
+		state.Health = math.min(state.MaxHealth, state.Health + value)
 		return
 	end
 
 	if definition.EffectType == "Heal" then
-		state.Health = math.min(state.MaxHealth, state.Health + definition.Value)
+		state.Health = math.min(state.MaxHealth, state.Health + value)
 		return
 	end
 
@@ -201,7 +293,7 @@ local function applyUpgradeDefinition(state, definition)
 		return
 	end
 
-	local nextValue = state[definition.StatKey] + definition.Value
+	local nextValue = state[definition.StatKey] + value
 	if definition.MinValue then
 		nextValue = math.max(definition.MinValue, nextValue)
 	end
@@ -221,13 +313,16 @@ function PlayerStateService.setPendingChoices(player, choiceIds)
 	state.PendingChoices = choiceIds
 
 	local choices = {}
-	for _, choiceId in ipairs(choiceIds) do
-		local definition = UpgradeDefinitions[choiceId]
+	for _, choice in ipairs(choiceIds) do
+		local definition = UpgradeDefinitions[choice.id]
 		if definition then
 			table.insert(choices, {
 				id = definition.Id,
 				displayName = definition.DisplayName,
-				description = definition.Description,
+				description = choice.description,
+				rarity = choice.rarity,
+				rarityLabel = choice.rarityLabel,
+				rarityColor = choice.rarityColor,
 			})
 		end
 	end
@@ -254,9 +349,11 @@ function PlayerStateService.applyUpgrade(player, upgradeId)
 	end
 
 	local isAllowed = false
-	for _, pendingId in ipairs(state.PendingChoices) do
-		if pendingId == upgradeId then
+	local selectedChoice = nil
+	for _, pendingChoice in ipairs(state.PendingChoices) do
+		if pendingChoice.id == upgradeId then
 			isAllowed = true
+			selectedChoice = pendingChoice
 			break
 		end
 	end
@@ -266,7 +363,7 @@ function PlayerStateService.applyUpgrade(player, upgradeId)
 		return false
 	end
 
-	applyUpgradeDefinition(state, definition)
+	applyUpgradeDefinition(state, definition, selectedChoice.value)
 	state.PendingChoices = nil
 	processLevelUps(player, state)
 

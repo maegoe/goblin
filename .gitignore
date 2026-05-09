@@ -5,3 +5,9 @@ build/
 *.rbxlx
 *.rbxm
 *.rbxmx
+
+# Local agent/tool config
+.agents/
+.codex/
+.playwright-cli/
+skills-lock.json
