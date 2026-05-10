@@ -5,6 +5,8 @@ local WeaponDefinitions = {
 		Range = 48,
 		ProjectileSpeed = 90,
 		TargetingMode = "Nearest",
+		ExplosionFeedbackImage = "rbxassetid://115292878237004",
+		ExplosionFeedbackDuration = 0.35,
 	},
 }
 

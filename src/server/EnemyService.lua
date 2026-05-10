@@ -103,6 +103,21 @@ function EnemyService.getNearestEnemy(position, range)
 	return nearestEnemy, nearestDistance
 end
 
+function EnemyService.getEnemiesInRadius(position, radius, excludedEnemy)
+	local nearbyEnemies = {}
+
+	for enemy, data in pairs(enemies) do
+		if enemy ~= excludedEnemy and enemy.Parent and data.Health > 0 then
+			local distance = (enemy.Position - position).Magnitude
+			if distance <= radius then
+				table.insert(nearbyEnemies, enemy)
+			end
+		end
+	end
+
+	return nearbyEnemies
+end
+
 function EnemyService.damage(enemy, amount)
 	local data = enemies[enemy]
 	if not data then
