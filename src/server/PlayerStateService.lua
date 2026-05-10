@@ -14,6 +14,18 @@ local statsRemote
 local choicesRemote
 local statsAccumulator = 0
 local LEVEL_UP_CHOICE_COUNT = 3
+local DEFAULT_RARITY = "common"
+local DEFAULT_RARITY_LABEL = "Common"
+local DEFAULT_RARITY_COLOR = { 190, 198, 210 }
+
+local function getRarityConfig()
+	local rarityConfig = UpgradeDefinitions.Rarity
+	if type(rarityConfig) ~= "table" then
+		return {}
+	end
+
+	return rarityConfig
+end
 
 local function getExperienceToNextLevel(level)
 	return PlayerDefaults.ExperienceToNextLevel + ((level - 1) * PlayerDefaults.ExperienceGrowth)
@@ -33,38 +45,96 @@ local function canOfferUpgrade(state, definition)
 end
 
 local function chooseRarity()
-	local rarityConfig = UpgradeDefinitions.Rarity
+	local rarityConfig = getRarityConfig()
+	local rarityOrder = rarityConfig.Order
+	if type(rarityOrder) ~= "table" or #rarityOrder == 0 then
+		return DEFAULT_RARITY
+	end
+
+	local rarityWeights = rarityConfig.Weights
+	if type(rarityWeights) ~= "table" then
+		rarityWeights = {}
+	end
 	local totalWeight = 0
 
-	for _, rarity in ipairs(rarityConfig.Order) do
-		totalWeight += rarityConfig.Weights[rarity] or 0
+	for _, rarity in ipairs(rarityOrder) do
+		local weight = rarityWeights[rarity]
+		if type(weight) == "number" and weight > 0 then
+			totalWeight += weight
+		end
 	end
 
 	if totalWeight <= 0 then
-		return rarityConfig.Order[1]
+		return rarityOrder[1] or DEFAULT_RARITY
 	end
 
 	local roll = math.random() * totalWeight
 	local cursor = 0
-	for _, rarity in ipairs(rarityConfig.Order) do
-		cursor += rarityConfig.Weights[rarity] or 0
+	for _, rarity in ipairs(rarityOrder) do
+		local weight = rarityWeights[rarity]
+		if type(weight) == "number" and weight > 0 then
+			cursor += weight
+		end
 		if roll <= cursor then
 			return rarity
 		end
 	end
 
-	return rarityConfig.Order[1]
+	return rarityOrder[1] or DEFAULT_RARITY
 end
 
 local function getRarityDisplay(rarity)
-	local display = UpgradeDefinitions.Rarity.Display[rarity] or UpgradeDefinitions.Rarity.Display.common
+	local rarityConfig = getRarityConfig()
+	local displays = rarityConfig.Display
+	if type(displays) ~= "table" then
+		return DEFAULT_RARITY_LABEL, DEFAULT_RARITY_COLOR
+	end
 
-	return display.Label, display.Color
+	local display = displays[rarity] or displays[DEFAULT_RARITY]
+	if type(display) ~= "table" then
+		return DEFAULT_RARITY_LABEL, DEFAULT_RARITY_COLOR
+	end
+
+	local label = display.Label
+	if type(label) ~= "string" then
+		label = DEFAULT_RARITY_LABEL
+	end
+
+	local color = display.Color
+	if type(color) ~= "table" then
+		color = DEFAULT_RARITY_COLOR
+	end
+
+	return label, color
+end
+
+local function isFiniteNumber(value)
+	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+local function requiresNumericValue(definition)
+	return definition.EffectType == "IncreaseMaxHealth" or definition.EffectType == "Heal" or definition.StatKey ~= nil
 end
 
 local function getUpgradeValue(definition, rarity)
-	local multiplier = UpgradeDefinitions.Rarity.ValueMultipliers[rarity] or 1
+	if not isFiniteNumber(definition.Value) then
+		return nil
+	end
+
+	local rarityConfig = getRarityConfig()
+	local multipliers = rarityConfig.ValueMultipliers
+	if type(multipliers) ~= "table" then
+		multipliers = {}
+	end
+	local multiplier = multipliers[rarity]
+	if not isFiniteNumber(multiplier) then
+		multiplier = 1
+	end
+
 	local value = definition.Value * multiplier
+	if not isFiniteNumber(value) then
+		return nil
+	end
 
 	if value % 1 == 0 then
 		return value
@@ -89,7 +159,11 @@ local function formatSignedValue(value)
 end
 
 local function formatDescription(definition, value)
-	if definition.DescriptionTemplate then
+	if type(definition.DescriptionTemplate) == "string" then
+		if not isFiniteNumber(value) then
+			return nil
+		end
+
 		if definition.EffectType == "Heal" then
 			return string.format(definition.DescriptionTemplate, tostring(math.abs(value)))
 		end
@@ -97,7 +171,17 @@ local function formatDescription(definition, value)
 		return string.format(definition.DescriptionTemplate, formatSignedValue(value))
 	end
 
-	return definition.Description
+	if type(definition.Description) == "string" then
+		return definition.Description
+	end
+	if type(definition.DisplayName) == "string" then
+		return definition.DisplayName
+	end
+	if type(definition.Id) == "string" then
+		return definition.Id
+	end
+
+	return nil
 end
 
 local function createUpgradeChoice(upgradeId)
@@ -106,14 +190,27 @@ local function createUpgradeChoice(upgradeId)
 		return nil
 	end
 
+	local choiceId = definition.Id or upgradeId
+	if type(choiceId) ~= "string" then
+		return nil
+	end
+
 	local rarity = chooseRarity()
 	local rarityLabel, rarityColor = getRarityDisplay(rarity)
 	local value = getUpgradeValue(definition, rarity)
+	if requiresNumericValue(definition) and not isFiniteNumber(value) then
+		return nil
+	end
+
+	local description = formatDescription(definition, value)
+	if not description then
+		return nil
+	end
 
 	return {
-		id = definition.Id,
-		displayName = definition.DisplayName,
-		description = formatDescription(definition, value),
+		id = choiceId,
+		displayName = definition.DisplayName or choiceId,
+		description = description,
 		rarity = rarity,
 		rarityLabel = rarityLabel,
 		rarityColor = rarityColor,
@@ -123,9 +220,11 @@ end
 
 local function getRandomUpgradeChoices(state)
 	local pool = {}
+	local seenPoolIds = {}
 	for _, upgradeId in ipairs(UpgradeDefinitions.Order) do
 		local definition = UpgradeDefinitions[upgradeId]
-		if definition and canOfferUpgrade(state, definition) then
+		if definition and not seenPoolIds[upgradeId] and canOfferUpgrade(state, definition) then
+			seenPoolIds[upgradeId] = true
 			table.insert(pool, upgradeId)
 		end
 	end
@@ -136,10 +235,15 @@ local function getRandomUpgradeChoices(state)
 	end
 
 	local choices = {}
-	local choiceCount = math.min(LEVEL_UP_CHOICE_COUNT, #pool)
-	for index = 1, choiceCount do
-		local choice = createUpgradeChoice(pool[index])
-		if choice then
+	local selectedIds = {}
+	for _, upgradeId in ipairs(pool) do
+		if #choices >= LEVEL_UP_CHOICE_COUNT then
+			break
+		end
+
+		local choice = createUpgradeChoice(upgradeId)
+		if choice and not selectedIds[choice.id] then
+			selectedIds[choice.id] = true
 			table.insert(choices, choice)
 		end
 	end
@@ -265,20 +369,32 @@ end
 
 local function applyUpgradeDefinition(state, definition, value)
 	if definition.EffectType == "IncreaseMaxHealth" then
+		if not isFiniteNumber(value) or not isFiniteNumber(state.MaxHealth) or not isFiniteNumber(state.Health) then
+			return false
+		end
+
 		state.MaxHealth += value
 		state.Health = math.min(state.MaxHealth, state.Health + value)
-		return
+		return true
 	end
 
 	if definition.EffectType == "Heal" then
+		if not isFiniteNumber(value) or not isFiniteNumber(state.MaxHealth) or not isFiniteNumber(state.Health) then
+			return false
+		end
+
 		state.Health = math.min(state.MaxHealth, state.Health + value)
-		return
+		return true
 	end
 
 	if definition.EffectType == "EnableExplosiveBolt" then
 		local currentStacks = state.Upgrades[definition.Id] or 0
-		if definition.MaxStacks and currentStacks >= definition.MaxStacks then
-			return
+		if not isFiniteNumber(currentStacks) then
+			return false
+		end
+
+		if isFiniteNumber(definition.MaxStacks) and currentStacks >= definition.MaxStacks then
+			return false
 		end
 
 		state.Upgrades[definition.Id] = currentStacks + 1
@@ -286,22 +402,27 @@ local function applyUpgradeDefinition(state, definition, value)
 			Radius = definition.ExplosionRadius,
 			DamageMultiplier = definition.ExplosionDamageMultiplier,
 		}
-		return
+		return true
 	end
 
 	if not definition.StatKey then
-		return
+		return false
+	end
+
+	if not isFiniteNumber(value) or not isFiniteNumber(state[definition.StatKey]) then
+		return false
 	end
 
 	local nextValue = state[definition.StatKey] + value
-	if definition.MinValue then
+	if isFiniteNumber(definition.MinValue) then
 		nextValue = math.max(definition.MinValue, nextValue)
 	end
-	if definition.MaxValue then
+	if isFiniteNumber(definition.MaxValue) then
 		nextValue = math.min(definition.MaxValue, nextValue)
 	end
 
 	state[definition.StatKey] = nextValue
+	return true
 end
 
 function PlayerStateService.setPendingChoices(player, choiceIds)
@@ -363,7 +484,10 @@ function PlayerStateService.applyUpgrade(player, upgradeId)
 		return false
 	end
 
-	applyUpgradeDefinition(state, definition, selectedChoice.value)
+	if not applyUpgradeDefinition(state, definition, selectedChoice.value) then
+		return false
+	end
+
 	state.PendingChoices = nil
 	processLevelUps(player, state)
 
