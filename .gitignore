@@ -11,3 +11,6 @@ build/
 .codex/
 .playwright-cli/
 skills-lock.json
+_workspace/
+.agent-team
+aftman.toml
