@@ -10,6 +10,8 @@ Use Jira for execution tracking. Before starting scoped implementation, QA, docu
 
 Confluence remains the source of truth for roadmap scope, feature specs, and completion criteria. Jira issues track execution state, ownership, QA, bugs, and follow-up work; they must not expand scope beyond the roadmap or version-specific Confluence pages.
 
+Before starting worker execution for a scoped Jira issue or issue batch, move every non-complete scoped issue to `진행 중`. After delivery, move only issues with PASS QA evidence and completed Confluence/CHANGELOG records to `완료`; record any Jira transition timeout or unverified status explicitly.
+
 ## Scope Discipline
 
 Avoid adding product design beyond the roadmap version plan. If an idea is outside the current version scope, record it as a future-version candidate instead of implementing it or expanding the current spec.
@@ -27,6 +29,8 @@ Create Jira design request tickets from that guide instead of inventing ad hoc a
 Do not add design files, original assets, or PNGs to the Git repo unless the roadmap, design guide, or user explicitly asks for repository-managed assets. Track design originals, PNG delivery, Roblox asset ids, applied code/commit, and verification status in Confluence and Jira.
 
 When a delivered design asset is applied in code, update the Jira ticket and the Confluence delivery table with the Roblox asset id, applied code or commit, PC/mobile verification result, and any follow-up issues.
+
+For imagegen-backed production asset work, require `design-brief.md`, `Design.md`, `token-catalog.md`, and an asset matrix before production unless the orchestrator intentionally scopes a single already-specified asset. Final visual artwork must come from `imagegen`; procedural drawing via Python, JS, SVG, canvas, PIL, ImageMagick, or hand-coded rendering is not accepted as final artwork. Mechanical post-processing may only copy/move, resize/crop, validate, or apply imagegen-skill chroma-key alpha conversion.
 
 ## QA Testing
 
@@ -83,6 +87,7 @@ Also update the related Jira issue before considering the task done. Add the res
 - Load `agent-team-shared` first for global runtime rules.
 - Use `persona-agent-team-planner` only inside scoped Goblin planning when terminology, acceptance criteria, plan stress-testing, architecture design, or implementation task contracts need a reusable pre-execution artifact.
 - Use `persona-agent-team-designer` through `goblin-game-ui-ux-designer` for scoped UI/visual design discovery, `design-brief.md` repair, design spec production, or multi-output visual planning.
+- For production-bound visual assets, the orchestrator must pass an explicit imagegen production contract to workers, require production-path hash checks against accepted finals, and make delivery depend on a PASS QA or rerun QA artifact.
 - Use `recipe-agent-team-compound-learning` only after completed non-trivial work, QA, review, or bug-fix evidence exists; prefer run-scoped `_workspace/{run_id}/compound-learning.md` and do not use local solution docs to replace Confluence roadmap or feature scope.
 - Use `recipe-agent-team-run-lifecycle` for full runs, `recipe-agent-team-worker-checkpoint` for worker checkpoints, and `recipe-agent-team-operational-audit` for audit/status/cleanup.
 - Use service skills for navigation: `agent-team-run`, `agent-team-task`, `agent-team-inbox`, `agent-team-sync`, and `agent-team-ops`.
@@ -102,3 +107,4 @@ Also update the related Jira issue before considering the task done. Add the res
 | --- | --- | --- | --- |
 | 2026-05-13 | Document Goblin Dev harness pointer | `.agents/skills/goblin-dev-orchestrator/SKILL.md`, `.codex/agents/` | Make local specialist harness discoverable from root instructions. |
 | 2026-05-13 | Wire planner, designer, and compound-learning personas/recipes | Goblin Dev harness | Support scoped pre-execution planning, UI design brief/spec routing, and completed-run learning capture. |
+| 2026-05-13 | Apply KAN-17~46 run feedback | Goblin Dev harness | Enforce Jira `진행 중` start state, imagegen-only production asset contracts, asset hash QA, rerun-QA delivery gating, and multi-ticket transition ledgers. |

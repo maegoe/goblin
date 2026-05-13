@@ -17,6 +17,10 @@
 - `레벨업 UI UX 리뷰와 이미지 목업까지 포함해서 KAN-8 진행해줘`
 - `KAN-8 레벨업 UI 디자인 brief부터 잡고 구현 가이드까지 정리해줘`
 - `캠프 UI 세트 디자인 spec 산출물 만든 뒤 KAN-16 구현 방향 잡아줘`
+- `KAN-18부터 KAN-46까지 design-brief, Design.md, token-catalog 만들고 imagegen asset 생산과 QA까지 진행해줘`
+- `이번 디자인 asset run은 imagegen만 쓰고 production PNG hash 검증까지 해줘`
+- `QA가 FIX라서 해당 phase만 rerun하고 delivery는 PASS QA 이후에 해줘`
+- `Jira 상태가 할 일로 남았는지 audit하고 진행 중/완료 상태 정리해줘`
 - `Rojo 최신 build 옵션 찾아보고 이 티켓 구현해줘`
 - `HUD 모바일 가독성 디자인 검토하고 목업 이미지 생성해줘`
 - `이전 design-brief.md 기반으로 UI UX만 partial rerun 해줘`
@@ -42,6 +46,7 @@
 - `게임 아이디어 브레인스토밍하자`
 - `아직 구현 중인데 배운 점 문서화부터 해줘`
 - `AGENTS.md 규칙 설명해줘`
+- `imagegen으로 아무 판타지 버튼 이미지 하나 만들어줘` unless it is tied to scoped Goblin Jira/Confluence delivery.
 
 ## Boundary Notes
 
@@ -50,3 +55,5 @@
 - Compound learning triggers only after completed non-trivial work or when the user asks to capture lessons from a completed run.
 - Ticket creation and initial Confluence spec work are outside the default route.
 - Delivery recording after code and QA is inside the route.
+- Scoped design asset runs trigger when they are tied to existing Goblin Jira/Confluence work; standalone image generation does not.
+- Jira status audit/repair triggers when it concerns a previous Goblin harness run or scoped KAN ticket batch.
