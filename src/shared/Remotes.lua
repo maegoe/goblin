@@ -8,6 +8,7 @@ local RemoteNames = {
 	RunEnded = "RunEnded",
 	LevelUpChoices = "LevelUpChoices",
 	SelectUpgrade = "SelectUpgrade",
+	PurchasePersistentUpgrade = "PurchasePersistentUpgrade",
 }
 
 local RemoteFunctionNames = {

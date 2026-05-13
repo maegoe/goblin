@@ -4,9 +4,11 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
+local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 
+local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
 local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
 
 local PlayerStateService = {}
@@ -257,12 +259,42 @@ local function getRandomUpgradeChoices(state)
 	return choices
 end
 
-local function createState()
+local function getPersistentUpgradeLevel(snapshot, upgradeId)
+	local upgrades = snapshot and snapshot.PersistentUpgrades
+	if type(upgrades) ~= "table" then
+		return 0
+	end
+
+	local level = upgrades[upgradeId]
+	if type(level) ~= "number" then
+		return 0
+	end
+
+	return math.max(0, math.floor(level))
+end
+
+local function getPersistentStatBonus(snapshot, statKey)
+	local bonus = 0
+	for _, upgradeId in ipairs(PersistentUpgradeDefinitions.Order) do
+		local definition = PersistentUpgradeDefinitions[upgradeId]
+		if definition and definition.StatKey == statKey then
+			bonus += getPersistentUpgradeLevel(snapshot, upgradeId) * definition.ValuePerLevel
+		end
+	end
+
+	return bonus
+end
+
+local function createState(player)
+	local progression = MetaProgressionService.getSnapshot(player)
+	local maxHealth = PlayerDefaults.MaxHealth + getPersistentStatBonus(progression, "MaxHealth")
+	local attackDamage = PlayerDefaults.AttackDamage + getPersistentStatBonus(progression, "AttackDamage")
+
 	return {
-		MaxHealth = PlayerDefaults.MaxHealth,
-		Health = PlayerDefaults.MaxHealth,
+		MaxHealth = maxHealth,
+		Health = maxHealth,
 		MoveSpeed = PlayerDefaults.MoveSpeed,
-		AttackDamage = PlayerDefaults.AttackDamage,
+		AttackDamage = attackDamage,
 		AttackInterval = PlayerDefaults.AttackInterval,
 		AttackRange = PlayerDefaults.AttackRange,
 		Level = PlayerDefaults.StartLevel,
@@ -555,7 +587,7 @@ local function onCharacterAdded(player)
 end
 
 local function onPlayerAdded(player)
-	states[player] = createState()
+	states[player] = createState(player)
 
 	player.CharacterAdded:Connect(function()
 		onCharacterAdded(player)
