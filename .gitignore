@@ -7,8 +7,6 @@ build/
 *.rbxmx
 
 # Local agent/tool config
-.agents/
-.codex/
 .playwright-cli/
 skills-lock.json
 _workspace/
