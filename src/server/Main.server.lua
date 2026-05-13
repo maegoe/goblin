@@ -6,6 +6,7 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local Server = script.Parent
 local ArenaService = require(Server:WaitForChild("ArenaService"))
+local MetaProgressionService = require(Server:WaitForChild("MetaProgressionService"))
 local PlayerStateService = require(Server:WaitForChild("PlayerStateService"))
 local EnemyService = require(Server:WaitForChild("EnemyService"))
 local WaveService = require(Server:WaitForChild("WaveService"))
@@ -14,6 +15,7 @@ local UpgradeService = require(Server:WaitForChild("UpgradeService"))
 
 Remotes.ensure()
 ArenaService.start()
+MetaProgressionService.start()
 PlayerStateService.start()
 EnemyService.start()
 UpgradeService.start()
