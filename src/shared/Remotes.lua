@@ -5,6 +5,7 @@ local REMOTE_FOLDER_NAME = "GoblinRemotes"
 local RemoteNames = {
 	PlayerStatsChanged = "PlayerStatsChanged",
 	MetaProgressionChanged = "MetaProgressionChanged",
+	RunEnded = "RunEnded",
 	LevelUpChoices = "LevelUpChoices",
 	SelectUpgrade = "SelectUpgrade",
 }

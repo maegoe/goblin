@@ -7,6 +7,8 @@ local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 
+local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
+
 local PlayerStateService = {}
 
 local states = {}
@@ -17,6 +19,10 @@ local LEVEL_UP_CHOICE_COUNT = 3
 local DEFAULT_RARITY = "common"
 local DEFAULT_RARITY_LABEL = "Common"
 local DEFAULT_RARITY_COLOR = { 190, 198, 210 }
+
+local function logState(player, message)
+	print(string.format("[goblin][PlayerState] %s: %s", player.Name, message))
+end
 
 local function getRarityConfig()
 	local rarityConfig = UpgradeDefinitions.Rarity
@@ -263,7 +269,9 @@ local function createState()
 		Experience = PlayerDefaults.StartExperience,
 		ExperienceToNextLevel = getExperienceToNextLevel(PlayerDefaults.StartLevel),
 		SurvivalTime = 0,
+		KillCount = 0,
 		Alive = true,
+		RunActive = true,
 		PendingChoices = nil,
 		Upgrades = {},
 		ExplosiveBolt = nil,
@@ -354,14 +362,22 @@ function PlayerStateService.damagePlayer(player, amount)
 		return
 	end
 
+	local previousHealth = state.Health
 	state.Health = math.max(0, state.Health - amount)
 
 	if state.Health <= 0 then
 		state.Alive = false
-		local humanoid = getHumanoid(player)
-		if humanoid then
-			humanoid.Health = 0
-		end
+		state.RunActive = false
+		state.PendingChoices = nil
+		logState(player, string.format(
+			"defeated by game HP; damage=%s health=%s->0 survival=%.1f level=%d xp=%d. Roblox Humanoid death was not triggered.",
+			tostring(amount),
+			tostring(previousHealth),
+			state.SurvivalTime,
+			state.Level,
+			state.Experience
+		))
+		RunResultService.endRun(player, state, "Defeat")
 	end
 
 	PlayerStateService.publish(player)
@@ -463,6 +479,15 @@ function PlayerStateService.addExperience(player, amount)
 	PlayerStateService.publish(player)
 end
 
+function PlayerStateService.recordKill(player)
+	local state = states[player]
+	if not state or not state.Alive then
+		return
+	end
+
+	state.KillCount += 1
+end
+
 function PlayerStateService.applyUpgrade(player, upgradeId)
 	local state = states[player]
 	if not state or not state.PendingChoices then
@@ -500,6 +525,24 @@ end
 local function onCharacterAdded(player)
 	local state = states[player]
 	if not state then
+		return
+	end
+
+	logState(player, string.format(
+		"CharacterAdded; runActive=%s alive=%s health=%s level=%s xp=%s",
+		tostring(state.RunActive),
+		tostring(state.Alive),
+		tostring(state.Health),
+		tostring(state.Level),
+		tostring(state.Experience)
+	))
+
+	if not state.RunActive then
+		state.Health = 0
+		state.Alive = false
+		state.PendingChoices = nil
+		PlayerStateService.publish(player)
+		logState(player, "CharacterAdded ignored because run is already defeated; combat state was not restarted.")
 		return
 	end
 

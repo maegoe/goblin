@@ -4,6 +4,7 @@
 
 ### Added
 
+- KAN-48: Added defeat-based `RunResult` creation, reward calculation, automatic GrowthStones/CampMaterials payout through MetaProgression, and `RunEnded` result UI.
 - KAN-47: Added the V0.4 `MetaProgression` storage foundation with default snapshot fields for growth stones, camp materials, persistent upgrades, camp level, owned artifacts, and equipped artifact id.
 - KAN-47: Added server-owned DataStore loading/saving with memory fallback and `MetaProgressionChanged` server-to-client snapshot synchronization.
 - KAN-47: Added a lightweight client controller that only receives server snapshots for future camp/result UI display.
@@ -13,6 +14,7 @@
 
 - `rojo build default.project.json -o build\game.rbxl` passed.
 - `git diff --check` passed.
+- KAN-48 Studio QA passed: result UI shows survival/kills/level/rewards, combat stops after HP reaches 0, and server logs `RunResult` with expected reward values.
 - Roblox Studio QA passed: API Services disabled path uses memory fallback without the previous warning, API Services enabled path starts without MetaProgression warnings/errors, and no client write RemoteEvent exists for direct progression mutation.
 
 ## 2026-05-13
