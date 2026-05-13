@@ -1,0 +1,149 @@
+[inputs."assets/v0_4/camp_ui/badge_camp_stage_0_256x256.png"]
+hash = "3905f89459230d2ec2b1ee5c04ac8a3ef45a41cd46e087baec231b9420db7ae7"
+id = 110319540935705
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_camp_stage_1_256x256.png"]
+hash = "a89e632f3818972765fd52b867642a8c19f03ba0e3201933931839be8ddd2cc8"
+id = 88586255407205
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_camp_stage_2_256x256.png"]
+hash = "bc8aef8b295f0593c92f1ad74e87bc3bbfb576b98ce4a87ae49f0a9e7297eab3"
+id = 106956297868140
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_camp_stage_3_256x256.png"]
+hash = "aaa8b5779c7776afd42615d3fe3054d2a1ac42cfdc8d84525194e275220aa9fd"
+id = 71854282264804
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_goblin_growth_0_256x256.png"]
+hash = "66519ff0dc208264cb5fdda1ae428149d07f1b97df1e64e204977b8e251d4eba"
+id = 101676801283264
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_goblin_growth_1_256x256.png"]
+hash = "765f45c29d7bc7aaff8defd0097724ac3fad766c3340a835861a938adba77492"
+id = 136983859836962
+packable = false
+
+[inputs."assets/v0_4/camp_ui/badge_goblin_growth_2_256x256.png"]
+hash = "c1760b46008a5d90a594cbb5353f4fc1b4d1de912af1edef8801f056b20a38a7"
+id = 114769372155156
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_primary_default_512x128.png"]
+hash = "4d7cbc36c0857a587ce48965f1010055303edd685c293440ff3ecb185f497f69"
+id = 94548585639994
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_primary_disabled_512x128.png"]
+hash = "b00dddb2b11c3c0ab6b987726e4d2301a80f70f6675a22b471d26c33cae5a75b"
+id = 74609729178769
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_primary_hover_512x128.png"]
+hash = "9ce85ff6b1e9348900a9355a40413e55de735ec754c7dc6425e523ed144e5c6d"
+id = 76568056380491
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_primary_pressed_512x128.png"]
+hash = "6b37a42b1f2897c303cf288e720df61cb85105bb6d6137db5899015cf669ac80"
+id = 109310114296632
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_secondary_default_512x128.png"]
+hash = "5e9def49d56df9f38894ffdc56219d3d8bb9bc79ee268dc8c838e2e6503c269c"
+id = 74877944697635
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_secondary_disabled_512x128.png"]
+hash = "a315bb02b4504e427ad9ad36ee81dd899fe1be59016d7b7d38f3e85e5faf631e"
+id = 137072812133701
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_secondary_hover_512x128.png"]
+hash = "6d9e74849acec59de5bd58fa72cb413404c7f9e49d81b6d7437648e6f52b36ed"
+id = 125411432581955
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_button_secondary_pressed_512x128.png"]
+hash = "2929dac56bbed1b14eba096380a51ad07dc5a6936177c5507a8ecb4fbce86dd8"
+id = 81949775822610
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_card_artifact_default_512x256.png"]
+hash = "bff5f002fa8e879125ce4d4c6e10919d74d88c555a11b5ed014b3b34ead225af"
+id = 121593070478960
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_card_artifact_selected_512x256.png"]
+hash = "ec3cc753d2d08ecde1857b51c9f841eacefb2e539e8482324fcea65219320805"
+id = 125888878394906
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_card_upgrade_default_512x256.png"]
+hash = "ba28106b35b2b6f609fb96efc6393b1b2739c246c85a695a0de0f18a1c327d2e"
+id = 112856064866751
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_card_upgrade_selected_512x256.png"]
+hash = "eb3c8d4a806860960364a2cfdc6fb6f2b67ac845690cbedd0e20f07db5b7ade2"
+id = 136483303070360
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_hub_background_default_960x720.png"]
+hash = "88509f0b8c407b2e4b8e02cd3313a208924c9f43e8107d848771bb4521138760"
+id = 83096712472280
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_panel_main_default_768x512.png"]
+hash = "17a5705a1e3ecba20df9ab3a72ba33a7b49097e0d5dfe5efbff802a5d3e55ef2"
+id = 73163758739650
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_panel_result_default_768x384.png"]
+hash = "2ef37f0f63821ebd896d74bde701a2dd5df00f5a72113ab08dc56d3c49cdae6b"
+id = 73190067601509
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_slot_artifact_empty_256x256.png"]
+hash = "0d5b30b313164481d0bb8006a8b6fd0d0d364176b6108c81d52848d384e5d49d"
+id = 90475598577225
+packable = false
+
+[inputs."assets/v0_4/camp_ui/camp_slot_artifact_equipped_256x256.png"]
+hash = "6bdf16246ae4cdb9654487ef95fea585339a89ef081da8e4e343951a8c6db755"
+id = 87351183678480
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_artifact_blast_core_default_256x256.png"]
+hash = "68907d7769f819d80f871830eeb9a678459f72e01c3191a30b3c0c1913d76b85"
+id = 81044501693106
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_artifact_swift_charm_default_256x256.png"]
+hash = "30a923fdbb79401473f04e28e6250e9e2840ec1f2402ed470c15be16dfbdc862"
+id = 121927602823576
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_camp_material_default_256x256.png"]
+hash = "9948569f1f53aab26b04541eed4f27442afeebaa424436d8131a361c7e1a5f8a"
+id = 115893531738912
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_growth_stone_default_256x256.png"]
+hash = "71c4976ba3329f26715372c0e4beaa54f7343fbf300457cc9d029b9dffb4214e"
+id = 86589204757544
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_upgrade_attack_default_256x256.png"]
+hash = "4883eafaa2bde2fbb03ae260e508db07c65b313feec8c3a60473ddc6dc38d301"
+id = 92224725940707
+packable = false
+
+[inputs."assets/v0_4/camp_ui/icon_upgrade_health_default_256x256.png"]
+hash = "d9fd8f193afb53131ff5199d822c5e4e226bf00a84e6ca4a9c05903e5a9ce789"
+id = 81322283003770
+packable = false

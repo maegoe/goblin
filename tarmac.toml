@@ -1,0 +1,10 @@
+name = "goblin-assets"
+
+asset-list-path = "build/asset-list.txt"
+asset-cache-path = "build/asset-cache"
+upload-to-group-id = 738487850
+[[inputs]]
+glob = "assets/**/*.png"
+codegen = true
+codegen-path = "src/shared/Assets.lua"
+codegen-base-path = "assets"
