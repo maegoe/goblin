@@ -48,11 +48,11 @@ Use `dev` as the active integration branch for the current roadmap version. Star
 
 Create a short-lived working branch for each scoped task and include the Jira key in the branch name. Use these prefixes:
 
-* `feat/KAN-123-short-name` for feature implementation
-* `fix/KAN-123-short-name` for bug fixes
-* `docs/KAN-123-short-name` for documentation-only changes
-* `qa/KAN-123-short-name` for QA instrumentation or verification support
-* `hotfix/KAN-123-short-name` for urgent fixes branched from `main`
+- `feat/KAN-123-short-name` for feature implementation
+- `fix/KAN-123-short-name` for bug fixes
+- `docs/KAN-123-short-name` for documentation-only changes
+- `qa/KAN-123-short-name` for QA instrumentation or verification support
+- `hotfix/KAN-123-short-name` for urgent fixes branched from `main`
 
 Before switching branches, merging, rebasing, or pulling, check the worktree status and do not overwrite user changes. If unrelated dirty files exist, leave them alone and continue only when the requested work can be isolated safely.
 
@@ -103,8 +103,8 @@ Also update the related Jira issue before considering the task done. Add the res
 
 **Change History:**
 
-| Date | Change | Target | Reason |
-| --- | --- | --- | --- |
-| 2026-05-13 | Document Goblin Dev harness pointer | `.agents/skills/goblin-dev-orchestrator/SKILL.md`, `.codex/agents/` | Make local specialist harness discoverable from root instructions. |
-| 2026-05-13 | Wire planner, designer, and compound-learning personas/recipes | Goblin Dev harness | Support scoped pre-execution planning, UI design brief/spec routing, and completed-run learning capture. |
-| 2026-05-13 | Apply KAN-17~46 run feedback | Goblin Dev harness | Enforce Jira `진행 중` start state, imagegen-only production asset contracts, asset hash QA, rerun-QA delivery gating, and multi-ticket transition ledgers. |
+| Date       | Change                                                         | Target                                                              | Reason                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-13 | Document Goblin Dev harness pointer                            | `.agents/skills/goblin-dev-orchestrator/SKILL.md`, `.codex/agents/` | Make local specialist harness discoverable from root instructions.                                                                                          |
+| 2026-05-13 | Wire planner, designer, and compound-learning personas/recipes | Goblin Dev harness                                                  | Support scoped pre-execution planning, UI design brief/spec routing, and completed-run learning capture.                                                    |
+| 2026-05-13 | Apply KAN-17~46 run feedback                                   | Goblin Dev harness                                                  | Enforce Jira `진행 중` start state, imagegen-only production asset contracts, asset hash QA, rerun-QA delivery gating, and multi-ticket transition ledgers. |
