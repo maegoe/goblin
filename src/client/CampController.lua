@@ -18,10 +18,13 @@ local campLevelText
 local healthUpgradeText
 local attackUpgradeText
 local artifactText
+local appearanceBadge
+local appearanceText
 local campButton
 local healthButton
 local attackButton
 local latestProgression = nil
+local latestAppearanceStage = nil
 
 local function createImage(parent, name, image, position, size)
 	local item = Instance.new("ImageLabel")
@@ -98,6 +101,7 @@ end
 
 local function updateCamp()
 	local progression = latestProgression or {}
+	local appearanceStage = latestAppearanceStage or {}
 	local growthStones = progression.GrowthStones or 0
 	local campMaterials = progression.CampMaterials or 0
 	local campLevel = progression.CampLevel or 0
@@ -112,6 +116,16 @@ local function updateCamp()
 	healthUpgradeText.Text = string.format("Max Health Lv %d / 5%s", healthLevel, healthCost and ("    Cost " .. healthCost) or "    Max")
 	attackUpgradeText.Text = string.format("Attack Lv %d / 5%s", attackLevel, attackCost and ("    Cost " .. attackCost) or "    Max")
 	artifactText.Text = "Artifact Slot: Empty"
+	if appearanceText then
+		appearanceText.Text = string.format(
+			"Growth Stage %d    %s",
+			appearanceStage.Stage or 0,
+			appearanceStage.DisplayName or "Sprout Goblin"
+		)
+	end
+	if appearanceBadge and type(appearanceStage.BadgeAssetId) == "string" then
+		appearanceBadge.Image = appearanceStage.BadgeAssetId
+	end
 
 	if campButton then
 		campButton.Image = campCost and campMaterials >= campCost and campAssets.camp_button_secondary_default_512x128 or campAssets.camp_button_secondary_disabled_512x128
@@ -175,6 +189,9 @@ local function buildCamp()
 
 	local panel = createImage(root, "MainPanel", campAssets.camp_panel_main_default_768x512, UDim2.fromScale(0.06, 0.08), UDim2.fromScale(0.58, 0.78))
 	createText(panel, "Title", "Goblin Camp", UDim2.fromScale(0.07, 0.06), UDim2.fromScale(0.5, 0.08), 30)
+	appearanceBadge = createImage(panel, "GrowthStageBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.82, 0.055), UDim2.fromScale(0.09, 0.13))
+	appearanceText = createText(panel, "GrowthStageText", "", UDim2.fromScale(0.55, 0.08), UDim2.fromScale(0.25, 0.06), 15)
+	appearanceText.TextXAlignment = Enum.TextXAlignment.Right
 	createImage(panel, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.07, 0.155), UDim2.fromScale(0.045, 0.07))
 	createImage(panel, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.33, 0.155), UDim2.fromScale(0.045, 0.07))
 	resourcesText = createText(panel, "Resources", "", UDim2.fromScale(0.12, 0.16), UDim2.fromScale(0.72, 0.08), 18)
@@ -219,6 +236,7 @@ function CampController.start()
 	Remotes.get(Remotes.Names.MetaProgressionChanged).OnClientEvent:Connect(function(payload)
 		if type(payload) == "table" then
 			latestProgression = payload.snapshot
+			latestAppearanceStage = payload.appearanceStage
 			updateCamp()
 		end
 	end)
@@ -231,6 +249,7 @@ function CampController.start()
 	end)
 	if ok and type(payload) == "table" then
 		latestProgression = payload.snapshot
+		latestAppearanceStage = payload.appearanceStage
 	end
 	updateCamp()
 	showCamp(false)

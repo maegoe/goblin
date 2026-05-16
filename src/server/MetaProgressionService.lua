@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GoblinAppearanceStages = require(Shared:WaitForChild("GoblinAppearanceStages"))
 local MetaProgressionDefaults = require(Shared:WaitForChild("MetaProgressionDefaults"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
@@ -116,6 +117,7 @@ local function publish(player)
 
 	progressionRemote:FireClient(player, {
 		snapshot = cloneValue(session.snapshot),
+		appearanceStage = cloneValue(GoblinAppearanceStages.getStageForSnapshot(session.snapshot)),
 		storageMode = session.storageMode,
 	})
 end
@@ -128,6 +130,7 @@ local function createPayload(player)
 
 	return {
 		snapshot = cloneValue(session.snapshot),
+		appearanceStage = cloneValue(GoblinAppearanceStages.getStageForSnapshot(session.snapshot)),
 		storageMode = session.storageMode,
 	}
 end
