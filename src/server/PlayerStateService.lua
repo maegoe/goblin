@@ -10,12 +10,14 @@ local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 
 local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
 local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
+local EnemyService
 
 local PlayerStateService = {}
 
 local states = {}
 local statsRemote
 local choicesRemote
+local startRunRemote
 local statsAccumulator = 0
 local LEVEL_UP_CHOICE_COUNT = 3
 local DEFAULT_RARITY = "common"
@@ -285,7 +287,7 @@ local function getPersistentStatBonus(snapshot, statKey)
 	return bonus
 end
 
-local function createState(player)
+local function createState(player, runActive)
 	local progression = MetaProgressionService.getSnapshot(player)
 	local maxHealth = PlayerDefaults.MaxHealth + getPersistentStatBonus(progression, "MaxHealth")
 	local attackDamage = PlayerDefaults.AttackDamage + getPersistentStatBonus(progression, "AttackDamage")
@@ -302,8 +304,8 @@ local function createState(player)
 		ExperienceToNextLevel = getExperienceToNextLevel(PlayerDefaults.StartLevel),
 		SurvivalTime = 0,
 		KillCount = 0,
-		Alive = true,
-		RunActive = true,
+		Alive = runActive == true,
+		RunActive = runActive == true,
 		PendingChoices = nil,
 		Upgrades = {},
 		ExplosiveBolt = nil,
@@ -413,6 +415,29 @@ function PlayerStateService.damagePlayer(player, amount)
 	end
 
 	PlayerStateService.publish(player)
+end
+
+function PlayerStateService.startRun(player)
+	local currentState = states[player]
+	if currentState and currentState.RunActive then
+		return false
+	end
+
+	if not EnemyService then
+		EnemyService = require(script.Parent:WaitForChild("EnemyService"))
+	end
+	EnemyService.clear()
+
+	states[player] = createState(player, true)
+	PlayerStateService.applyMovement(player)
+	PlayerStateService.publish(player)
+	logState(player, string.format(
+		"StartRun accepted; maxHealth=%d attackDamage=%d",
+		states[player].MaxHealth,
+		states[player].AttackDamage
+	))
+
+	return true
 end
 
 local function applyUpgradeDefinition(state, definition, value)
@@ -587,7 +612,7 @@ local function onCharacterAdded(player)
 end
 
 local function onPlayerAdded(player)
-	states[player] = createState(player)
+	states[player] = createState(player, false)
 
 	player.CharacterAdded:Connect(function()
 		onCharacterAdded(player)
@@ -601,6 +626,10 @@ end
 function PlayerStateService.start()
 	statsRemote = Remotes.get(Remotes.Names.PlayerStatsChanged)
 	choicesRemote = Remotes.get(Remotes.Names.LevelUpChoices)
+	startRunRemote = Remotes.get(Remotes.Names.StartRun)
+	startRunRemote.OnServerEvent:Connect(function(player)
+		PlayerStateService.startRun(player)
+	end)
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	Players.PlayerRemoving:Connect(function(player)

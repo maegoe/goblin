@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Assets = require(Shared:WaitForChild("Assets"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local RunResultController = {}
@@ -13,6 +14,7 @@ local titleText
 local summaryText
 local rewardText
 local totalText
+local campAssets = Assets.v0_4.camp_ui
 
 local function formatTime(totalSeconds)
 	local minutes = math.floor(totalSeconds / 60)
@@ -55,21 +57,40 @@ local function buildResultUi()
 	dim.Size = UDim2.fromScale(1, 1)
 	dim.Parent = resultGui
 
-	panel = Instance.new("Frame")
+	panel = Instance.new("ImageLabel")
 	panel.Name = "ResultPanel"
 	panel.AnchorPoint = Vector2.new(0.5, 0.5)
 	panel.BackgroundColor3 = Color3.fromRGB(18, 20, 25)
-	panel.BackgroundTransparency = 0.04
+	panel.BackgroundTransparency = 1
 	panel.BorderSizePixel = 0
+	panel.Image = campAssets.camp_panel_result_default_768x384
+	panel.ScaleType = Enum.ScaleType.Stretch
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(420, 280)
+	panel.Size = UDim2.fromOffset(520, 320)
 	panel.Parent = dim
 
-	titleText = createLabel(panel, "Title", UDim2.fromOffset(24, 22), UDim2.fromOffset(372, 40), 30)
-	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(24, 78), UDim2.fromOffset(372, 76), 20)
-	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(24, 164), UDim2.fromOffset(372, 58), 22)
-	totalText = createLabel(panel, "Totals", UDim2.fromOffset(24, 232), UDim2.fromOffset(372, 28), 16)
+	titleText = createLabel(panel, "Title", UDim2.fromOffset(36, 28), UDim2.fromOffset(448, 40), 30)
+	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(36, 84), UDim2.fromOffset(448, 76), 20)
+	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(36, 170), UDim2.fromOffset(448, 58), 22)
+	totalText = createLabel(panel, "Totals", UDim2.fromOffset(36, 238), UDim2.fromOffset(448, 28), 16)
 	totalText.TextColor3 = Color3.fromRGB(190, 198, 210)
+
+	local campButton = Instance.new("ImageButton")
+	campButton.Name = "ReturnToCamp"
+	campButton.BackgroundTransparency = 1
+	campButton.Image = campAssets.camp_button_primary_default_512x128
+	campButton.Position = UDim2.fromOffset(330, 262)
+	campButton.Size = UDim2.fromOffset(150, 38)
+	campButton.ScaleType = Enum.ScaleType.Stretch
+	campButton.Parent = panel
+	campButton.Activated:Connect(function()
+		resultGui.Enabled = false
+	end)
+
+	local campLabel = createLabel(campButton, "Label", UDim2.fromScale(0.08, 0.12), UDim2.fromScale(0.84, 0.76), 16)
+	campLabel.Text = "Camp"
+	campLabel.TextXAlignment = Enum.TextXAlignment.Center
+	campLabel.TextYAlignment = Enum.TextYAlignment.Center
 end
 
 local function showResult(result)

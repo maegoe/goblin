@@ -4,6 +4,7 @@
 
 ### Added
 
+- KAN-50: Added asset-backed camp hub UI, StartRun flow, camp level purchase validation, and integrated persistent upgrade purchase controls for KAN-49 QA.
 - KAN-49: Added persistent MaxHealth/AttackDamage upgrade definitions, server-side purchase validation, GrowthStones spending, MetaProgression level updates, and PlayerState initial stat bonuses.
 - KAN-48: Added defeat-based `RunResult` creation, reward calculation, automatic GrowthStones/CampMaterials payout through MetaProgression, and `RunEnded` result UI.
 - KAN-47: Added the V0.4 `MetaProgression` storage foundation with default snapshot fields for growth stones, camp materials, persistent upgrades, camp level, owned artifacts, and equipped artifact id.
