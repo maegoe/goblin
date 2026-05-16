@@ -4,7 +4,8 @@
 
 ### Added
 
-- KAN-51: Added persistent-upgrade-total based goblin appearance stages, MetaProgression appearance payloads, camp growth-stage badge display, and client-side character color/overhead badge fallback.
+- KAN-51: Added persistent-upgrade-total based goblin appearance stages, MetaProgression appearance payloads, camp growth-stage badge display, and client-side character color fallback.
+- KAN-51: Moved the combat growth-stage badge from overhead Billboard fallback to a fixed HUD image so it remains visible with the top-down camera.
 - KAN-50: Added asset-backed camp hub UI, StartRun flow, camp level purchase validation, and integrated persistent upgrade purchase controls for KAN-49 QA.
 - KAN-49: Added persistent MaxHealth/AttackDamage upgrade definitions, server-side purchase validation, GrowthStones spending, MetaProgression level updates, and PlayerState initial stat bonuses.
 - KAN-48: Added defeat-based `RunResult` creation, reward calculation, automatic GrowthStones/CampMaterials payout through MetaProgression, and `RunEnded` result UI.
