@@ -4,8 +4,17 @@ local REMOTE_FOLDER_NAME = "GoblinRemotes"
 
 local RemoteNames = {
 	PlayerStatsChanged = "PlayerStatsChanged",
+	MetaProgressionChanged = "MetaProgressionChanged",
+	RunEnded = "RunEnded",
+	StartRun = "StartRun",
+	PurchaseCampLevel = "PurchaseCampLevel",
 	LevelUpChoices = "LevelUpChoices",
 	SelectUpgrade = "SelectUpgrade",
+	PurchasePersistentUpgrade = "PurchasePersistentUpgrade",
+}
+
+local RemoteFunctionNames = {
+	GetMetaProgressionSnapshot = "GetMetaProgressionSnapshot",
 }
 
 local Remotes = {}
@@ -32,6 +41,14 @@ function Remotes.ensure()
 		end
 	end
 
+	for _, remoteName in pairs(RemoteFunctionNames) do
+		if not folder:FindFirstChild(remoteName) then
+			local remote = Instance.new("RemoteFunction")
+			remote.Name = remoteName
+			remote.Parent = folder
+		end
+	end
+
 	return folder
 end
 
@@ -41,5 +58,6 @@ function Remotes.get(remoteName)
 end
 
 Remotes.Names = RemoteNames
+Remotes.FunctionNames = RemoteFunctionNames
 
 return Remotes
