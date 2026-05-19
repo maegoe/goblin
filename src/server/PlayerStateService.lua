@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
 local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
 local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -287,15 +288,62 @@ local function getPersistentStatBonus(snapshot, statKey)
 	return bonus
 end
 
+local function getEquippedArtifact(snapshot)
+	local artifactId = snapshot and snapshot.EquippedArtifactId
+	if type(artifactId) ~= "string" then
+		return nil, nil
+	end
+
+	return artifactId, ArtifactDefinitions[artifactId]
+end
+
+local function combineExplosiveBolt(currentExplosion, nextExplosion)
+	if type(nextExplosion) ~= "table" then
+		return currentExplosion
+	end
+
+	local nextRadius = nextExplosion.Radius
+	local nextMultiplier = nextExplosion.DamageMultiplier
+	if not isFiniteNumber(nextRadius) or not isFiniteNumber(nextMultiplier) then
+		return currentExplosion
+	end
+
+	if not currentExplosion then
+		return {
+			Radius = nextRadius,
+			DamageMultiplier = nextMultiplier,
+		}
+	end
+
+	return {
+		Radius = math.max(currentExplosion.Radius or 0, nextRadius),
+		DamageMultiplier = (currentExplosion.DamageMultiplier or 0) + nextMultiplier,
+	}
+end
+
 local function createState(player, runActive)
 	local progression = MetaProgressionService.getSnapshot(player)
 	local maxHealth = PlayerDefaults.MaxHealth + getPersistentStatBonus(progression, "MaxHealth")
 	local attackDamage = PlayerDefaults.AttackDamage + getPersistentStatBonus(progression, "AttackDamage")
+	local moveSpeed = PlayerDefaults.MoveSpeed
+	local equippedArtifactId, equippedArtifact = getEquippedArtifact(progression)
+	local explosiveBolt = nil
+
+	if equippedArtifact then
+		if equippedArtifact.EffectType == "StatBonus" and equippedArtifact.StatKey == "MoveSpeed" and isFiniteNumber(equippedArtifact.Value) then
+			moveSpeed += equippedArtifact.Value
+		elseif equippedArtifact.EffectType == "WeakExplosion" then
+			explosiveBolt = combineExplosiveBolt(explosiveBolt, {
+				Radius = equippedArtifact.ExplosionRadius,
+				DamageMultiplier = equippedArtifact.ExplosionDamageMultiplier,
+			})
+		end
+	end
 
 	return {
 		MaxHealth = maxHealth,
 		Health = maxHealth,
-		MoveSpeed = PlayerDefaults.MoveSpeed,
+		MoveSpeed = moveSpeed,
 		AttackDamage = attackDamage,
 		AttackInterval = PlayerDefaults.AttackInterval,
 		AttackRange = PlayerDefaults.AttackRange,
@@ -308,7 +356,8 @@ local function createState(player, runActive)
 		RunActive = runActive == true,
 		PendingChoices = nil,
 		Upgrades = {},
-		ExplosiveBolt = nil,
+		EquippedArtifactId = equippedArtifactId,
+		ExplosiveBolt = explosiveBolt,
 	}
 end
 
@@ -471,10 +520,10 @@ local function applyUpgradeDefinition(state, definition, value)
 		end
 
 		state.Upgrades[definition.Id] = currentStacks + 1
-		state.ExplosiveBolt = {
+		state.ExplosiveBolt = combineExplosiveBolt(state.ExplosiveBolt, {
 			Radius = definition.ExplosionRadius,
 			DamageMultiplier = definition.ExplosionDamageMultiplier,
-		}
+		})
 		return true
 	end
 

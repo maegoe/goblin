@@ -3,6 +3,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Assets = require(Shared:WaitForChild("Assets"))
 local EnemyDefinitions = require(Shared:WaitForChild("EnemyDefinitions"))
 
 local PlayerStateService = require(script.Parent:WaitForChild("PlayerStateService"))
@@ -11,6 +12,30 @@ local EnemyService = {}
 
 local enemies = {}
 local enemyFolder
+local enemyAssets = Assets.v0_4.ingame_2d
+local BASIC_MONSTER_SPRITE_SIZE = Vector2.new(136, 136)
+
+local function createSpriteBillboard(parent, image, size)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "CombatSprite"
+	billboard.Adornee = parent
+	billboard.AlwaysOnTop = false
+	billboard.LightInfluence = 0
+	billboard.MaxDistance = 250
+	billboard.Size = UDim2.fromOffset(size.X, size.Y)
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, 0.35, 0)
+	billboard.Parent = parent
+
+	local sprite = Instance.new("ImageLabel")
+	sprite.Name = "Sprite"
+	sprite.BackgroundTransparency = 1
+	sprite.Image = image
+	sprite.ScaleType = Enum.ScaleType.Fit
+	sprite.Size = UDim2.fromScale(1, 1)
+	sprite.Parent = billboard
+
+	return sprite
+end
 
 local function getEnemyFolder()
 	if enemyFolder then
@@ -76,13 +101,16 @@ function EnemyService.spawn(enemyType, position)
 	enemy.Size = definition.Size
 	enemy.Color = Color3.fromRGB(93, 176, 87)
 	enemy.Material = Enum.Material.SmoothPlastic
+	enemy.Transparency = 1
 	enemy.Anchored = true
 	enemy.CanCollide = false
 	enemy.Position = position
 	enemy.Parent = getEnemyFolder()
+	local sprite = createSpriteBillboard(enemy, enemyAssets.combat_monster_default_512x512, BASIC_MONSTER_SPRITE_SIZE)
 
 	enemies[enemy] = {
 		Instance = enemy,
+		Sprite = sprite,
 		Type = enemyType,
 		Health = definition.MaxHealth,
 		MaxHealth = definition.MaxHealth,
@@ -146,7 +174,9 @@ function EnemyService.damage(enemy, amount)
 	end
 
 	local scale = math.clamp(data.Health / data.MaxHealth, 0.25, 1)
-	enemy.Transparency = 1 - scale
+	if data.Sprite then
+		data.Sprite.ImageTransparency = 1 - scale
+	end
 
 	return nil
 end

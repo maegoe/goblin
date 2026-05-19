@@ -1,3 +1,5 @@
+local ArtifactDefinitions = require(script.Parent:WaitForChild("ArtifactDefinitions"))
+
 local MetaProgressionDefaults = {
 	SchemaVersion = 1,
 	GrowthStones = 0,
@@ -7,11 +9,16 @@ local MetaProgressionDefaults = {
 		AttackDamage = 0,
 	},
 	CampLevel = 0,
-	OwnedArtifacts = {},
+	OwnedArtifacts = ArtifactDefinitions.DefaultOwned,
 	EquippedArtifactId = nil,
 }
 
 function MetaProgressionDefaults.create()
+	local ownedArtifacts = {}
+	for _, artifactId in ipairs(MetaProgressionDefaults.OwnedArtifacts) do
+		table.insert(ownedArtifacts, artifactId)
+	end
+
 	return {
 		SchemaVersion = MetaProgressionDefaults.SchemaVersion,
 		GrowthStones = MetaProgressionDefaults.GrowthStones,
@@ -21,7 +28,7 @@ function MetaProgressionDefaults.create()
 			AttackDamage = MetaProgressionDefaults.PersistentUpgrades.AttackDamage,
 		},
 		CampLevel = MetaProgressionDefaults.CampLevel,
-		OwnedArtifacts = {},
+		OwnedArtifacts = ownedArtifacts,
 		EquippedArtifactId = MetaProgressionDefaults.EquippedArtifactId,
 	}
 end

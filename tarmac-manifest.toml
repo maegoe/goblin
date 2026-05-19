@@ -94,8 +94,8 @@ id = 136483303070360
 packable = false
 
 [inputs."assets/v0_4/camp_ui/camp_hub_background_default_960x720.png"]
-hash = "88509f0b8c407b2e4b8e02cd3313a208924c9f43e8107d848771bb4521138760"
-id = 83096712472280
+hash = "2584ff36759f03673c5e6615198459aa016de6e91481a623f45bc7a1b7887d68"
+id = 106508962052444
 packable = false
 
 [inputs."assets/v0_4/camp_ui/camp_panel_main_default_768x512.png"]
@@ -146,4 +146,14 @@ packable = false
 [inputs."assets/v0_4/camp_ui/icon_upgrade_health_default_256x256.png"]
 hash = "d9fd8f193afb53131ff5199d822c5e4e226bf00a84e6ca4a9c05903e5a9ce789"
 id = 81322283003770
+packable = false
+
+[inputs."assets/v0_4/ingame_2d/combat_goblin_player_default_512x512.png"]
+hash = "9fbd60b8859f3e8a8e302aaf2f8170fbec42297b63b5181a422be5462e76431e"
+id = 125657519388441
+packable = false
+
+[inputs."assets/v0_4/ingame_2d/combat_monster_default_512x512.png"]
+hash = "dda32eb1e47f41e9513109b91c94c24892b337cea0b5897d792ccce5c68ddfd4"
+id = 132893170082324
 packable = false

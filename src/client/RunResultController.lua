@@ -39,6 +39,15 @@ local function createLabel(parent, name, position, size, textSize)
 	return label
 end
 
+local function constrainScaledText(label, minSize, maxSize)
+	label.TextScaled = true
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MinTextSize = minSize
+	constraint.MaxTextSize = maxSize
+	constraint.Parent = label
+end
+
 local function buildResultUi()
 	local playerGui = localPlayer:WaitForChild("PlayerGui")
 
@@ -66,21 +75,21 @@ local function buildResultUi()
 	panel.Image = campAssets.camp_panel_result_default_768x384
 	panel.ScaleType = Enum.ScaleType.Stretch
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(520, 320)
+	panel.Size = UDim2.fromOffset(540, 330)
 	panel.Parent = dim
 
-	titleText = createLabel(panel, "Title", UDim2.fromOffset(36, 28), UDim2.fromOffset(448, 40), 30)
-	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(36, 84), UDim2.fromOffset(448, 76), 20)
-	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(36, 170), UDim2.fromOffset(448, 58), 22)
-	totalText = createLabel(panel, "Totals", UDim2.fromOffset(36, 238), UDim2.fromOffset(448, 28), 16)
+	titleText = createLabel(panel, "Title", UDim2.fromOffset(66, 58), UDim2.fromOffset(408, 36), 26)
+	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(66, 104), UDim2.fromOffset(408, 78), 18)
+	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(66, 190), UDim2.fromOffset(408, 52), 20)
+	totalText = createLabel(panel, "Totals", UDim2.fromOffset(66, 250), UDim2.fromOffset(250, 28), 14)
 	totalText.TextColor3 = Color3.fromRGB(190, 198, 210)
 
 	local campButton = Instance.new("ImageButton")
 	campButton.Name = "ReturnToCamp"
 	campButton.BackgroundTransparency = 1
 	campButton.Image = campAssets.camp_button_primary_default_512x128
-	campButton.Position = UDim2.fromOffset(330, 262)
-	campButton.Size = UDim2.fromOffset(150, 38)
+	campButton.Position = UDim2.fromOffset(350, 268)
+	campButton.Size = UDim2.fromOffset(150, 40)
 	campButton.ScaleType = Enum.ScaleType.Stretch
 	campButton.Parent = panel
 	campButton.Activated:Connect(function()
@@ -91,6 +100,7 @@ local function buildResultUi()
 	campLabel.Text = "Camp"
 	campLabel.TextXAlignment = Enum.TextXAlignment.Center
 	campLabel.TextYAlignment = Enum.TextYAlignment.Center
+	constrainScaledText(campLabel, 10, 16)
 end
 
 local function showResult(result)

@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-05-20
+
+### Changed
+
+- KAN-17: Regenerated the V0.4 camp hub background with `persona-agent-team-designer` design artifacts, uploaded it through Tarmac, and updated `Assets.lua` from `rbxassetid://83096712472280` to `rbxassetid://106508962052444`.
+- KAN-54: Adjusted camp hub and run-result UI text safe areas from user screenshots so labels sit inside the panel/button artwork, with scaled button labels for tighter PC/mobile layouts.
+- KAN-57/KAN-58: Registered V0.4 in-game 2D character assets through Tarmac, added `Assets.v0_4.ingame_2d` entries, and applied the goblin player/default monster sprites to combat display.
+- KAN-57/KAN-58: Increased combat sprite display sizes and reduced the top-down camera height from 72 to 64 so the new 2D images are readable without changing movement, hitbox, attack range, or spawn rules.
+
+### Validation
+
+- KAN-17 asset validation passed: final PNG is 960x720, SHA-256 `2584ff36759f03673c5e6615198459aa016de6e91481a623f45bc7a1b7887d68`, and `rojo build default.project.json -o build\game.rbxl` passed. Roblox Studio PC/mobile visual QA remains pending.
+- KAN-54 static/build validation passed: `git diff --check` passed and `rojo build default.project.json -o build\game.rbxl` passed. Roblox Studio screenshot QA remains pending.
+- KAN-57/KAN-58 asset application passed static/build validation: Tarmac uploaded `rbxassetid://125657519388441` and `rbxassetid://132893170082324`; both PNGs are 512x512 with alpha, `git diff --check` passed, and `rojo build default.project.json -o build\game.rbxl` passed. Roblox Studio visual/application QA remains pending.
+
+## 2026-05-19
+
+### Added
+
+- KAN-52: Added the V0.4 artifact 1-slot equip loop with `SwiftCharm` movement speed, `BlastCore` weak explosion, server-validated equip/unequip, default artifact ownership, run-start effect application, and camp UI artifact controls.
+- KAN-52: Combined `BlastCore` with the V0.3 `ExplosiveBolt` upgrade by summing explosion damage to 65% and using radius 14 when both effects are active.
+
+### Validation
+
+- KAN-52 static/build QA passed: `git diff --check` passed and `rojo build default.project.json -o build\game.rbxl` passed.
+- KAN-52 Studio runtime QA passed by user verification: artifact effects apply correctly in game.
+
 ## 2026-05-14
 
 ### Added

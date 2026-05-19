@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
 local GoblinAppearanceStages = require(Shared:WaitForChild("GoblinAppearanceStages"))
 local MetaProgressionDefaults = require(Shared:WaitForChild("MetaProgressionDefaults"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -41,21 +42,38 @@ local function asNonNegativeInteger(value, fallback)
 	return math.max(0, math.floor(value))
 end
 
-local function normalizeStringArray(value)
+local function normalizeOwnedArtifacts(value)
 	local result = {}
 	local seen = {}
+	for _, artifactId in ipairs(ArtifactDefinitions.DefaultOwned) do
+		if ArtifactDefinitions[artifactId] and not seen[artifactId] then
+			seen[artifactId] = true
+			table.insert(result, artifactId)
+		end
+	end
+
 	if type(value) ~= "table" then
 		return result
 	end
 
 	for _, item in ipairs(value) do
-		if type(item) == "string" and not seen[item] then
+		if type(item) == "string" and ArtifactDefinitions[item] and not seen[item] then
 			seen[item] = true
 			table.insert(result, item)
 		end
 	end
 
 	return result
+end
+
+local function ownsArtifactId(ownedArtifacts, artifactId)
+	for _, ownedArtifactId in ipairs(ownedArtifacts) do
+		if ownedArtifactId == artifactId then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function normalizePersistentUpgrades(value)
@@ -83,9 +101,13 @@ local function normalizeSnapshot(value)
 	snapshot.CampMaterials = asNonNegativeInteger(value.CampMaterials, MetaProgressionDefaults.CampMaterials)
 	snapshot.PersistentUpgrades = normalizePersistentUpgrades(value.PersistentUpgrades)
 	snapshot.CampLevel = asNonNegativeInteger(value.CampLevel, MetaProgressionDefaults.CampLevel)
-	snapshot.OwnedArtifacts = normalizeStringArray(value.OwnedArtifacts)
+	snapshot.OwnedArtifacts = normalizeOwnedArtifacts(value.OwnedArtifacts)
 
-	if type(value.EquippedArtifactId) == "string" then
+	if
+		type(value.EquippedArtifactId) == "string"
+		and ArtifactDefinitions[value.EquippedArtifactId]
+		and ownsArtifactId(snapshot.OwnedArtifacts, value.EquippedArtifactId)
+	then
 		snapshot.EquippedArtifactId = value.EquippedArtifactId
 	end
 

@@ -21,7 +21,7 @@ return {
 			camp_card_artifact_selected_512x256 = "rbxassetid://125888878394906",
 			camp_card_upgrade_default_512x256 = "rbxassetid://112856064866751",
 			camp_card_upgrade_selected_512x256 = "rbxassetid://136483303070360",
-			camp_hub_background_default_960x720 = "rbxassetid://83096712472280",
+			camp_hub_background_default_960x720 = "rbxassetid://106508962052444",
 			camp_panel_main_default_768x512 = "rbxassetid://73163758739650",
 			camp_panel_result_default_768x384 = "rbxassetid://73190067601509",
 			camp_slot_artifact_empty_256x256 = "rbxassetid://90475598577225",
@@ -32,6 +32,10 @@ return {
 			icon_growth_stone_default_256x256 = "rbxassetid://86589204757544",
 			icon_upgrade_attack_default_256x256 = "rbxassetid://92224725940707",
 			icon_upgrade_health_default_256x256 = "rbxassetid://81322283003770",
+		},
+		ingame_2d = {
+			combat_goblin_player_default_512x512 = "rbxassetid://125657519388441",
+			combat_monster_default_512x512 = "rbxassetid://132893170082324",
 		},
 	},
 }
