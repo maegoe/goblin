@@ -32,6 +32,15 @@ local function calculateRewards(survivalTime, killCount, levelReached)
 	return growthStones, campMaterials
 end
 
+local function getRewardMultiplier(state)
+	local multiplier = state and state.RewardMultiplier
+	if type(multiplier) ~= "number" or multiplier ~= multiplier or multiplier == math.huge or multiplier == -math.huge then
+		return 1
+	end
+
+	return math.max(0, multiplier)
+end
+
 function RunResultService.endRun(player, state, endReason)
 	if not player or not state then
 		return nil
@@ -41,6 +50,9 @@ function RunResultService.endRun(player, state, endReason)
 	local killCount = state.KillCount or 0
 	local levelReached = state.Level or 1
 	local growthStonesEarned, campMaterialsEarned = calculateRewards(survivalTime, killCount, levelReached)
+	local rewardMultiplier = getRewardMultiplier(state)
+	growthStonesEarned = math.floor((growthStonesEarned * rewardMultiplier) + 0.5)
+	campMaterialsEarned = math.floor((campMaterialsEarned * rewardMultiplier) + 0.5)
 
 	local _, snapshot = MetaProgressionService.update(player, function(progression)
 		progression.GrowthStones += growthStonesEarned
@@ -53,18 +65,20 @@ function RunResultService.endRun(player, state, endReason)
 		LevelReached = levelReached,
 		GrowthStonesEarned = growthStonesEarned,
 		CampMaterialsEarned = campMaterialsEarned,
+		RewardMultiplier = rewardMultiplier,
 		EndReason = endReason,
 		Progression = snapshot,
 	}
 
 	getRunEndedRemote():FireClient(player, result)
 	print(string.format(
-		"[goblin][RunResult] %s ended run; reason=%s survival=%.1f kills=%d level=%d growthStones=%d campMaterials=%d",
+		"[goblin][RunResult] %s ended run; reason=%s survival=%.1f kills=%d level=%d rewardMultiplier=%.2f growthStones=%d campMaterials=%d",
 		player.Name,
 		tostring(endReason),
 		survivalTime,
 		killCount,
 		levelReached,
+		rewardMultiplier,
 		growthStonesEarned,
 		campMaterialsEarned
 	))

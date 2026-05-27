@@ -273,6 +273,24 @@ function MetaProgressionService.update(player, mutator)
 	return saved, cloneValue(session.snapshot)
 end
 
+function MetaProgressionService.resetForQa(player)
+	if not RunService:IsStudio() then
+		warn("[goblin] MetaProgression QA reset rejected outside Studio.")
+		return false, "StudioOnly"
+	end
+
+	local session = sessions[player]
+	if not session then
+		return false, "NoSession"
+	end
+
+	session.snapshot = normalizeSnapshot(MetaProgressionDefaults.create())
+	local saved = saveSession(player)
+	publish(player)
+
+	return saved, cloneValue(session.snapshot)
+end
+
 function MetaProgressionService.start()
 	if started then
 		return
@@ -280,6 +298,9 @@ function MetaProgressionService.start()
 	started = true
 
 	progressionRemote = Remotes.get(Remotes.Names.MetaProgressionChanged)
+	Remotes.get(Remotes.Names.ResetMetaProgression).OnServerEvent:Connect(function(player)
+		MetaProgressionService.resetForQa(player)
+	end)
 	Remotes.get(Remotes.FunctionNames.GetMetaProgressionSnapshot).OnServerInvoke = function(player)
 		return createPayload(player)
 	end

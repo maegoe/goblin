@@ -75,21 +75,21 @@ local function buildResultUi()
 	panel.Image = campAssets.camp_panel_result_default_768x384
 	panel.ScaleType = Enum.ScaleType.Stretch
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(540, 330)
+	panel.Size = UDim2.fromOffset(560, 336)
 	panel.Parent = dim
 
-	titleText = createLabel(panel, "Title", UDim2.fromOffset(66, 58), UDim2.fromOffset(408, 36), 26)
-	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(66, 104), UDim2.fromOffset(408, 78), 18)
-	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(66, 190), UDim2.fromOffset(408, 52), 20)
-	totalText = createLabel(panel, "Totals", UDim2.fromOffset(66, 250), UDim2.fromOffset(250, 28), 14)
+	titleText = createLabel(panel, "Title", UDim2.fromOffset(78, 70), UDim2.fromOffset(404, 34), 24)
+	summaryText = createLabel(panel, "Summary", UDim2.fromOffset(78, 112), UDim2.fromOffset(404, 70), 17)
+	rewardText = createLabel(panel, "Rewards", UDim2.fromOffset(78, 190), UDim2.fromOffset(404, 48), 19)
+	totalText = createLabel(panel, "Totals", UDim2.fromOffset(78, 246), UDim2.fromOffset(296, 42), 13)
 	totalText.TextColor3 = Color3.fromRGB(190, 198, 210)
 
 	local campButton = Instance.new("ImageButton")
 	campButton.Name = "ReturnToCamp"
 	campButton.BackgroundTransparency = 1
 	campButton.Image = campAssets.camp_button_primary_default_512x128
-	campButton.Position = UDim2.fromOffset(350, 268)
-	campButton.Size = UDim2.fromOffset(150, 40)
+	campButton.Position = UDim2.fromOffset(386, 270)
+	campButton.Size = UDim2.fromOffset(136, 36)
 	campButton.ScaleType = Enum.ScaleType.Stretch
 	campButton.Parent = panel
 	campButton.Activated:Connect(function()

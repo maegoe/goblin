@@ -124,7 +124,10 @@ local function isFiniteNumber(value)
 end
 
 local function requiresNumericValue(definition)
-	return definition.EffectType == "IncreaseMaxHealth" or definition.EffectType == "Heal" or definition.StatKey ~= nil
+	return definition.EffectType == "IncreaseMaxHealth"
+		or definition.EffectType == "Heal"
+		or definition.EffectType == "IncreaseRewardMultiplier"
+		or definition.StatKey ~= nil
 end
 
 local function getUpgradeValue(definition, rarity)
@@ -169,6 +172,14 @@ local function formatSignedValue(value)
 	return text
 end
 
+local function formatUpgradeValue(definition, value)
+	if definition.ValueFormat == "Percent" then
+		return formatSignedValue(math.floor((value * 100) + 0.5)) .. "%"
+	end
+
+	return formatSignedValue(value)
+end
+
 local function formatDescription(definition, value)
 	if type(definition.DescriptionTemplate) == "string" then
 		if not isFiniteNumber(value) then
@@ -179,7 +190,7 @@ local function formatDescription(definition, value)
 			return string.format(definition.DescriptionTemplate, tostring(math.abs(value)))
 		end
 
-		return string.format(definition.DescriptionTemplate, formatSignedValue(value))
+		return string.format(definition.DescriptionTemplate, formatUpgradeValue(definition, value))
 	end
 
 	if type(definition.Description) == "string" then
@@ -347,6 +358,7 @@ local function createState(player, runActive)
 		AttackDamage = attackDamage,
 		AttackInterval = PlayerDefaults.AttackInterval,
 		AttackRange = PlayerDefaults.AttackRange,
+		RewardMultiplier = 1,
 		Level = PlayerDefaults.StartLevel,
 		Experience = PlayerDefaults.StartExperience,
 		ExperienceToNextLevel = getExperienceToNextLevel(PlayerDefaults.StartLevel),
@@ -524,6 +536,15 @@ local function applyUpgradeDefinition(state, definition, value)
 			Radius = definition.ExplosionRadius,
 			DamageMultiplier = definition.ExplosionDamageMultiplier,
 		})
+		return true
+	end
+
+	if definition.EffectType == "IncreaseRewardMultiplier" then
+		if not isFiniteNumber(value) or not isFiniteNumber(state.RewardMultiplier) then
+			return false
+		end
+
+		state.RewardMultiplier = math.max(1, state.RewardMultiplier + value)
 		return true
 	end
 

@@ -1,5 +1,58 @@
 # Changelog
 
+## 2026-05-28
+
+### Changed
+
+- KAN-75: Updated Confluence after the sound deliverables guide was moved under the common `Development` page, reframing it as a project-wide sound handoff guide and linking it from the V1.0 parent page plus the KAN-66 combat feedback spec.
+- KAN-75: Added the Asphalt audio asset pipeline scaffold with `asphalt.toml`, a Rokit Asphalt tool pin, `AudioAssets.luau` codegen target documentation, and local secret/debug ignore rules.
+- KAN-76: Created a V1.0 sound deliverables request ticket for the seven KAN-66 combat feedback SFX files, linked it to KAN-66 and KAN-75, and recorded it on the V1.0 parent page, combat feedback spec, and sound deliverables guide.
+- KAN-76: Added the project-local ElevenLabs Free SFX skill with KAN-76 event prompts, MP3 candidate output paths, API-key `.env` handling, dry-run support, and JSONL manifest recording for QA/draft sound candidates before KAN-75 Asphalt upload.
+
+### Validation
+
+- KAN-75 static validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed with existing LF to CRLF warnings only, and TOML parsing passed with the bundled Python runtime. Asphalt cloud/debug sync is pending because `asphalt`/`rokit` are not installed on the local PATH and no delivered audio file or `ASPHALT_API_KEY` is available in this session.
+- KAN-76 ElevenLabs skill validation passed: dry-run generated all seven planned event paths/prompts, Python AST syntax validation passed, skill frontmatter validation passed, missing `ELEVENLABS_API_KEY` exits with clear `.env` guidance, and `.env` is confirmed ignored by git. `quick_validate.py` could not run because the bundled Python runtime lacks PyYAML, and bytecode compilation was avoided because `.agents/skills` denies `__pycache__` writes under the current ACL.
+
+## 2026-05-25
+
+### Changed
+
+- KAN-59: Added in-game 2D sprite rotation so the player sprite follows movement direction and enemy sprites face their current target player without changing KAN-57/KAN-58 asset ids, movement, hitboxes, combat ranges, or spawn rules.
+- KAN-59: Corrected sprite rotation by 180 degrees after Studio QA and strengthened player character body transparency so the Roblox character rig remains hidden behind the 2D sprite.
+- V0.4 Confluence audit: Updated the roadmap and V0.4 tracking pages after KAN-54/KAN-57/KAN-58/KAN-59 completion, with KAN-55 recorded as the remaining HUD badge polish implementation/QA item and KAN-56 tracked separately as a design-process task.
+- V0.4 tracking: Marked KAN-55 complete per user confirmation and recorded KAN-56 as a separate design-process backlog item outside the current project stage.
+- Jira cleanup: Marked KAN-8, KAN-12, and KAN-16 complete per user direction, with worklog notes on each issue.
+- Jira cleanup: Marked KAN-2 complete after confirming there were no remaining open child issues under the V0.3 Epic.
+- V0.4 closure: Marked KAN-14 complete, updated the V0.4 Confluence page and roadmap to completed status, and removed KAN-56 from the V0.4 Epic as a standalone backlog item.
+- V1.0 planning: Created Jira Epic KAN-60, completed planning task KAN-61, added the V1.0 parent Confluence page, created eight child feature/release/QA documents, and linked them from the roadmap.
+- V1.0 planning: Refined the V1.0 Confluence pages from the deep-interview results, created implementation tickets KAN-62 through KAN-69, created planning record KAN-70, and added design request tickets KAN-71 through KAN-73 for enemy variants, growth icons, and combat feedback VFX.
+- KAN-62: Marked the V1.0 first-play flow complete by user confirmation under the current criteria, with follow-up regression coverage left to the V1.0 integration QA ticket KAN-69.
+- KAN-63: Tuned the V1.0 survival-session wave curve around a 600-second target, adding staged spawn pressure so the first run ramps toward the 3-5 minute difficulty band while late-session pressure remains high for 10-minute survival.
+- KAN-64: Added Basic/Fast/Tank enemy role definitions, time-based enemy mix weights, and sprite size/color fallback visuals so V1.0 difficulty can rely on role pressure instead of enemy count alone.
+- KAN-63/KAN-64: Increased early difficulty after QA feedback by lowering the initial spawn interval, raising active enemy caps, introducing FastSlime from the first wave, introducing TankSlime from 60 seconds, and increasing special slime movement speed.
+- KAN-64: Raised enemy health and movement speed after QA feedback so Basic/Fast/Tank slimes apply more durable pursuit pressure without changing contact damage, XP rewards, or spawn weights.
+- KAN-74: Added a Studio-only camp QA reset button plus a server-validated `ResetMetaProgression` RemoteEvent so full first-run testing can restore the default meta progression snapshot and refresh camp UI state.
+- KAN-65: Added the `Camp Spoils` reward growth choice, reward-multiplier state, percent-formatted level-up text, and run-end reward scaling so the V1.0 choice pool covers attack, reward, recovery, and utility directions.
+- KAN-54: Adjusted V0.4 camp/result UI safe areas so camp resource rows/cards sit lower inside the main panel and run-result text no longer collides with the panel frame or Camp button.
+- KAN-57/KAN-58: Marked the delivered in-game goblin and monster 2D PNG design requests complete in Jira after prior Tarmac upload and code application records.
+- KAN-59: Created a follow-up Jira ticket for player character sprite rotation behavior without changing the delivered KAN-57/KAN-58 image assets.
+- KAN-75: Created a separate V1.0 tooling ticket for the Asphalt-based sound/audio asset registration pipeline, linked it to KAN-66, and recorded the handoff on the Confluence combat feedback page.
+- KAN-75: Added a Confluence sound deliverables guide for sound-team handoff, covering request/delivery tables, V1.0 KAN-66 event file names, Asphalt upload ownership, and Roblox audio QA criteria.
+
+### Validation
+
+- KAN-59 validation passed: `git diff --check` passed, `rojo build default.project.json -o build\game.rbxl` passed, and user Studio visual QA confirmed player/enemy sprite rotation plus player rig transparency.
+- KAN-63 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF to CRLF warnings only. Studio playtest tuning remains pending.
+- KAN-64 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF to CRLF warnings only. Studio visual/playtest QA remains pending.
+- KAN-74 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF to CRLF warnings only. Studio click QA for the reset button remains pending.
+- KAN-64 Studio QA passed by user verification: Basic/Fast/Tank monster variants appear correctly and their role-based presentation is acceptable for V1.0 completion.
+- KAN-74 Studio QA passed by user verification: the Reset QA button works for complete initial-state testing.
+- KAN-63 was closed per user direction after the wave/enemy pressure tuning pass; remaining full-loop survival validation stays under the V1.0 integration QA track.
+- KAN-65 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF to CRLF warnings only. Studio level-up choice QA remains pending.
+- KAN-65 Studio QA passed by user verification: `Camp Spoils` appears in level-up choices and increases run-end rewards.
+- KAN-54 validation passed: `git diff --check` passed, `rojo build default.project.json -o build\game.rbxl` passed, and user Studio visual QA confirmed the camp/result UI placement after iterative safe-area adjustments.
+
 ## 2026-05-20
 
 ### Changed

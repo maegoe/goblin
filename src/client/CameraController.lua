@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -9,6 +10,8 @@ local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
 local CameraController = {}
 
 local localPlayer = Players.LocalPlayer
+local LOCK_CAMERA_ZOOM_ACTION = "GoblinLockCameraZoom"
+local CAMERA_FIELD_OF_VIEW = 70
 
 local function getRoot()
 	local character = localPlayer.Character
@@ -22,12 +25,29 @@ end
 function CameraController.start()
 	local camera = Workspace.CurrentCamera
 	camera.CameraType = Enum.CameraType.Scriptable
+	camera.FieldOfView = CAMERA_FIELD_OF_VIEW
+	localPlayer.CameraMinZoomDistance = PlayerDefaults.CameraHeight
+	localPlayer.CameraMaxZoomDistance = PlayerDefaults.CameraHeight
+
+	ContextActionService:BindAction(
+		LOCK_CAMERA_ZOOM_ACTION,
+		function()
+			return Enum.ContextActionResult.Sink
+		end,
+		false,
+		Enum.UserInputType.MouseWheel
+	)
 
 	RunService.RenderStepped:Connect(function()
 		local root = getRoot()
 		if not root then
 			return
 		end
+
+		camera.CameraType = Enum.CameraType.Scriptable
+		camera.FieldOfView = CAMERA_FIELD_OF_VIEW
+		localPlayer.CameraMinZoomDistance = PlayerDefaults.CameraHeight
+		localPlayer.CameraMaxZoomDistance = PlayerDefaults.CameraHeight
 
 		local focusPosition = root.Position
 		local cameraPosition = focusPosition + Vector3.new(0, PlayerDefaults.CameraHeight, 0)

@@ -14,8 +14,13 @@ local enemies = {}
 local enemyFolder
 local enemyAssets = Assets.v0_4.ingame_2d
 local BASIC_MONSTER_SPRITE_SIZE = Vector2.new(136, 136)
+local DEFAULT_SPRITE_COLOR = Color3.fromRGB(255, 255, 255)
 
-local function createSpriteBillboard(parent, image, size)
+local function getSpriteRotationForFlatDirection(direction)
+	return math.deg(math.atan2(direction.X, -direction.Z)) + 180
+end
+
+local function createSpriteBillboard(parent, image, size, color)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "CombatSprite"
 	billboard.Adornee = parent
@@ -30,6 +35,7 @@ local function createSpriteBillboard(parent, image, size)
 	sprite.Name = "Sprite"
 	sprite.BackgroundTransparency = 1
 	sprite.Image = image
+	sprite.ImageColor3 = color
 	sprite.ScaleType = Enum.ScaleType.Fit
 	sprite.Size = UDim2.fromScale(1, 1)
 	sprite.Parent = billboard
@@ -106,7 +112,9 @@ function EnemyService.spawn(enemyType, position)
 	enemy.CanCollide = false
 	enemy.Position = position
 	enemy.Parent = getEnemyFolder()
-	local sprite = createSpriteBillboard(enemy, enemyAssets.combat_monster_default_512x512, BASIC_MONSTER_SPRITE_SIZE)
+	local spriteSize = definition.SpriteSize or BASIC_MONSTER_SPRITE_SIZE
+	local spriteColor = definition.SpriteColor or DEFAULT_SPRITE_COLOR
+	local sprite = createSpriteBillboard(enemy, enemyAssets.combat_monster_default_512x512, spriteSize, spriteColor)
 
 	enemies[enemy] = {
 		Instance = enemy,
@@ -207,9 +215,13 @@ function EnemyService.start()
 				continue
 			end
 
+			local direction = root.Position - enemy.Position
+			local flatDirection = Vector3.new(direction.X, 0, direction.Z)
+			if data.Sprite and flatDirection.Magnitude > 0 then
+				data.Sprite.Rotation = getSpriteRotationForFlatDirection(flatDirection)
+			end
+
 			if distance > 3.5 then
-				local direction = root.Position - enemy.Position
-				local flatDirection = Vector3.new(direction.X, 0, direction.Z)
 				if flatDirection.Magnitude > 0 then
 					enemy.Position += flatDirection.Unit * data.MoveSpeed * deltaTime
 				end

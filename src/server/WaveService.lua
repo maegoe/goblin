@@ -13,6 +13,23 @@ local elapsed = 0
 local spawnAccumulator = 0
 local hadAlivePlayers = false
 
+local function getCurrentPressureStage()
+	local stages = WaveConfig.PressureStages
+	if type(stages) ~= "table" then
+		return nil
+	end
+
+	local currentStage = nil
+	for _, stage in ipairs(stages) do
+		local startsAt = stage.StartsAt
+		if type(startsAt) == "number" and elapsed >= startsAt then
+			currentStage = stage
+		end
+	end
+
+	return currentStage
+end
+
 local function getSpawnInterval()
 	return math.max(
 		WaveConfig.MinimumSpawnInterval,
@@ -21,7 +38,53 @@ local function getSpawnInterval()
 end
 
 local function getEnemiesPerSpawn()
-	return WaveConfig.EnemiesPerSpawn + math.floor(elapsed / WaveConfig.EnemiesPerSpawnEverySeconds)
+	local stage = getCurrentPressureStage()
+	if stage and type(stage.EnemiesPerSpawn) == "number" then
+		return stage.EnemiesPerSpawn
+	end
+
+	return WaveConfig.EnemiesPerSpawn
+end
+
+local function getMaxEnemies()
+	local stage = getCurrentPressureStage()
+	if stage and type(stage.MaxEnemies) == "number" then
+		return stage.MaxEnemies
+	end
+
+	return WaveConfig.MaxEnemies
+end
+
+local function chooseEnemyType()
+	local stage = getCurrentPressureStage()
+	local weights = stage and stage.EnemyWeights
+	if type(weights) ~= "table" then
+		return WaveConfig.EnemyType
+	end
+
+	local totalWeight = 0
+	for _, weight in pairs(weights) do
+		if type(weight) == "number" and weight > 0 then
+			totalWeight += weight
+		end
+	end
+
+	if totalWeight <= 0 then
+		return WaveConfig.EnemyType
+	end
+
+	local roll = math.random() * totalWeight
+	local cursor = 0
+	for enemyType, weight in pairs(weights) do
+		if type(weight) == "number" and weight > 0 then
+			cursor += weight
+			if roll <= cursor then
+				return enemyType
+			end
+		end
+	end
+
+	return WaveConfig.EnemyType
 end
 
 local function spawnNearPlayer(player)
@@ -34,7 +97,7 @@ local function spawnNearPlayer(player)
 	local radius = WaveConfig.SpawnRadius + (math.random() * WaveConfig.SpawnRadiusJitter)
 	local offset = Vector3.new(math.cos(angle) * radius, 2, math.sin(angle) * radius)
 
-	EnemyService.spawn(WaveConfig.EnemyType, root.Position + offset)
+	EnemyService.spawn(chooseEnemyType(), root.Position + offset)
 end
 
 function WaveService.start()
@@ -64,12 +127,13 @@ function WaveService.start()
 
 		spawnAccumulator = 0
 
-		if EnemyService.count() >= WaveConfig.MaxEnemies then
+		local maxEnemies = getMaxEnemies()
+		if EnemyService.count() >= maxEnemies then
 			return
 		end
 
 		for _ = 1, getEnemiesPerSpawn() do
-			if EnemyService.count() >= WaveConfig.MaxEnemies then
+			if EnemyService.count() >= maxEnemies then
 				break
 			end
 

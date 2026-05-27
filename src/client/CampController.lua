@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
@@ -250,24 +251,24 @@ local function buildCamp()
 	appearanceBadge = createImage(panel, "GrowthStageBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.83, 0.09), UDim2.fromScale(0.08, 0.115))
 	appearanceText = createText(panel, "GrowthStageText", "", UDim2.fromScale(0.55, 0.115), UDim2.fromScale(0.25, 0.06), 13)
 	appearanceText.TextXAlignment = Enum.TextXAlignment.Right
-	createImage(panel, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.09, 0.205), UDim2.fromScale(0.04, 0.06))
-	createImage(panel, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.36, 0.205), UDim2.fromScale(0.04, 0.06))
-	resourcesText = createText(panel, "Resources", "", UDim2.fromScale(0.14, 0.207), UDim2.fromScale(0.7, 0.065), 16)
-	campLevelText = createText(panel, "CampLevel", "", UDim2.fromScale(0.09, 0.315), UDim2.fromScale(0.74, 0.065), 16)
+	createImage(panel, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.125, 0.22), UDim2.fromScale(0.035, 0.055))
+	createImage(panel, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.365, 0.22), UDim2.fromScale(0.035, 0.055))
+	resourcesText = createText(panel, "Resources", "", UDim2.fromScale(0.17, 0.222), UDim2.fromScale(0.58, 0.06), 14)
+	campLevelText = createText(panel, "CampLevel", "", UDim2.fromScale(0.125, 0.31), UDim2.fromScale(0.6, 0.06), 14)
 
-	local healthCard = createImage(panel, "HealthCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.07, 0.44), UDim2.fromScale(0.4, 0.235))
-	createImage(healthCard, "Icon", campAssets.icon_upgrade_health_default_256x256, UDim2.fromScale(0.07, 0.2), UDim2.fromScale(0.16, 0.46))
-	healthUpgradeText = createText(healthCard, "Text", "", UDim2.fromScale(0.27, 0.2), UDim2.fromScale(0.64, 0.24), 14)
+	local healthCard = createImage(panel, "HealthCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.105, 0.405), UDim2.fromScale(0.38, 0.215))
+	createImage(healthCard, "Icon", campAssets.icon_upgrade_health_default_256x256, UDim2.fromScale(0.07, 0.2), UDim2.fromScale(0.15, 0.45))
+	healthUpgradeText = createText(healthCard, "Text", "", UDim2.fromScale(0.27, 0.22), UDim2.fromScale(0.62, 0.22), 13)
 
-	local attackCard = createImage(panel, "AttackCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.52, 0.44), UDim2.fromScale(0.4, 0.235))
-	createImage(attackCard, "Icon", campAssets.icon_upgrade_attack_default_256x256, UDim2.fromScale(0.07, 0.2), UDim2.fromScale(0.16, 0.46))
-	attackUpgradeText = createText(attackCard, "Text", "", UDim2.fromScale(0.27, 0.2), UDim2.fromScale(0.64, 0.24), 14)
+	local attackCard = createImage(panel, "AttackCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.515, 0.405), UDim2.fromScale(0.38, 0.215))
+	createImage(attackCard, "Icon", campAssets.icon_upgrade_attack_default_256x256, UDim2.fromScale(0.07, 0.2), UDim2.fromScale(0.15, 0.45))
+	attackUpgradeText = createText(attackCard, "Text", "", UDim2.fromScale(0.27, 0.22), UDim2.fromScale(0.62, 0.22), 13)
 
-	local artifactCard = createImage(panel, "ArtifactCard", campAssets.camp_card_artifact_default_512x256, UDim2.fromScale(0.07, 0.715), UDim2.fromScale(0.4, 0.205))
-	artifactSlotImage = createImage(artifactCard, "Slot", campAssets.camp_slot_artifact_empty_256x256, UDim2.fromScale(0.07, 0.18), UDim2.fromScale(0.16, 0.48))
-	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.27, 0.13), UDim2.fromScale(0.64, 0.22), 12)
-	createImage(artifactCard, "SwiftIcon", campAssets.icon_artifact_swift_charm_default_256x256, UDim2.fromScale(0.28, 0.39), UDim2.fromScale(0.085, 0.24))
-	createImage(artifactCard, "BlastIcon", campAssets.icon_artifact_blast_core_default_256x256, UDim2.fromScale(0.59, 0.39), UDim2.fromScale(0.085, 0.24))
+	local artifactCard = createImage(panel, "ArtifactCard", campAssets.camp_card_artifact_default_512x256, UDim2.fromScale(0.305, 0.595), UDim2.fromScale(0.39, 0.19))
+	artifactSlotImage = createImage(artifactCard, "Slot", campAssets.camp_slot_artifact_empty_256x256, UDim2.fromScale(0.075, 0.17), UDim2.fromScale(0.15, 0.47))
+	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.28, 0.13), UDim2.fromScale(0.6, 0.2), 11)
+	createImage(artifactCard, "SwiftIcon", campAssets.icon_artifact_swift_charm_default_256x256, UDim2.fromScale(0.31, 0.39), UDim2.fromScale(0.075, 0.23))
+	createImage(artifactCard, "BlastIcon", campAssets.icon_artifact_blast_core_default_256x256, UDim2.fromScale(0.61, 0.39), UDim2.fromScale(0.075, 0.23))
 
 	local startButton = createImageButton(root, "StartRun", campAssets.camp_button_primary_default_512x128, UDim2.fromScale(0.69, 0.72), UDim2.fromScale(0.24, 0.1), "Start Run")
 	startButton.Activated:Connect(function()
@@ -280,31 +281,38 @@ local function buildCamp()
 		Remotes.get(Remotes.Names.PurchaseCampLevel):FireServer()
 	end)
 
-	healthButton = createImageButton(healthCard, "BuyHealth", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.28, 0.58), UDim2.fromScale(0.56, 0.26), "Buy")
+	if RunService:IsStudio() then
+		local resetProgressionButton = createImageButton(root, "ResetProgression", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.69, 0.84), UDim2.fromScale(0.24, 0.06), "Reset QA")
+		resetProgressionButton.Activated:Connect(function()
+			Remotes.get(Remotes.Names.ResetMetaProgression):FireServer()
+		end)
+	end
+
+	healthButton = createImageButton(healthCard, "BuyHealth", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.3, 0.56), UDim2.fromScale(0.54, 0.25), "Buy")
 	healthButton.Activated:Connect(function()
 		Remotes.get(Remotes.Names.PurchasePersistentUpgrade):FireServer("MaxHealth")
 	end)
 
-	attackButton = createImageButton(attackCard, "BuyAttack", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.28, 0.58), UDim2.fromScale(0.56, 0.26), "Buy")
+	attackButton = createImageButton(attackCard, "BuyAttack", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.3, 0.56), UDim2.fromScale(0.54, 0.25), "Buy")
 	attackButton.Activated:Connect(function()
 		Remotes.get(Remotes.Names.PurchasePersistentUpgrade):FireServer("AttackDamage")
 	end)
 
-	swiftArtifactButton = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.38, 0.4), UDim2.fromScale(0.18, 0.23), "Swift")
+	swiftArtifactButton = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.39, 0.39), UDim2.fromScale(0.18, 0.23), "Swift")
 	swiftArtifactButton.Activated:Connect(function()
 		if ownsArtifact(latestProgression, "SwiftCharm") then
 			Remotes.get(Remotes.Names.EquipArtifact):FireServer("SwiftCharm")
 		end
 	end)
 
-	blastArtifactButton = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.69, 0.4), UDim2.fromScale(0.18, 0.23), "Blast")
+	blastArtifactButton = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.69, 0.39), UDim2.fromScale(0.18, 0.23), "Blast")
 	blastArtifactButton.Activated:Connect(function()
 		if ownsArtifact(latestProgression, "BlastCore") then
 			Remotes.get(Remotes.Names.EquipArtifact):FireServer("BlastCore")
 		end
 	end)
 
-	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.28, 0.67), UDim2.fromScale(0.56, 0.24), "Unequip")
+	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.31, 0.66), UDim2.fromScale(0.52, 0.23), "Unequip")
 	unequipArtifactButton.Activated:Connect(function()
 		if latestProgression and latestProgression.EquippedArtifactId then
 			Remotes.get(Remotes.Names.UnequipArtifact):FireServer()

@@ -13,3 +13,7 @@ _workspace/
 .agent-team
 aftman.toml
 assets/
+
+# Local Asphalt output and secrets
+.asphalt-debug/
+.env

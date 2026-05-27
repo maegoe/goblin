@@ -38,6 +38,46 @@ New-Item -ItemType Directory -Force build | Out-Null
 rojo build default.project.json -o build/game.rbxl
 ```
 
+## Audio asset pipeline
+
+V1.0 sound assets use Asphalt separately from the Tarmac PNG pipeline.
+
+- Source handoff path: `assets/audio/{version}/{category}/{event}_{variant}.{ext}`
+- Current input glob: `assets/audio/**/*`
+- Generated Luau module: `src/shared/AudioAssets.luau`
+- Creator: Roblox group `738487850`
+- Required API key env var: `ASPHALT_API_KEY`
+- Required Open Cloud permissions: `asset:read`, `asset:write`
+- Supported audio formats: `.mp3`, `.ogg`, `.wav`, `.flac`
+
+Install tools:
+
+```powershell
+rokit install
+```
+
+Inspect processed files without uploading:
+
+```powershell
+asphalt sync debug
+```
+
+Check whether cloud assets are current without uploading:
+
+```powershell
+$env:ASPHALT_API_KEY = "<roblox-open-cloud-api-key>"
+asphalt sync cloud --dry-run
+```
+
+Upload delivered audio assets and generate `AudioAssets.luau`:
+
+```powershell
+$env:ASPHALT_API_KEY = "<roblox-open-cloud-api-key>"
+asphalt sync cloud
+```
+
+After a successful cloud sync, commit `asphalt.lock.toml` and `src/shared/AudioAssets.luau`. Do not commit `.env`, API keys, or raw handoff audio unless the Confluence sound deliverables guide explicitly says to store that batch in Git. Roblox audio moderation, creator permissions, and monthly quota can block upload even when the local pipeline is valid.
+
 ## GitHub Actions setup
 
 Create a GitHub Environment named `production`.
