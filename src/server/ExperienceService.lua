@@ -7,6 +7,7 @@ function ExperienceService.awardKill(player, killInfo)
 		return
 	end
 
+	PlayerStateService.recordKill(player)
 	PlayerStateService.addExperience(player, killInfo.experienceReward)
 end
 

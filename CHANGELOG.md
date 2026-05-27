@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-05-14
+
+### Added
+
+- KAN-51: Added persistent-upgrade-total based goblin appearance stages, MetaProgression appearance payloads, camp growth-stage badge display, and client-side character color fallback.
+- KAN-51: Moved the combat growth-stage badge from overhead Billboard fallback to a fixed HUD image so it remains visible with the top-down camera.
+- KAN-50: Added asset-backed camp hub UI, StartRun flow, camp level purchase validation, and integrated persistent upgrade purchase controls for KAN-49 QA.
+- KAN-49: Added persistent MaxHealth/AttackDamage upgrade definitions, server-side purchase validation, GrowthStones spending, MetaProgression level updates, and PlayerState initial stat bonuses.
+- KAN-48: Added defeat-based `RunResult` creation, reward calculation, automatic GrowthStones/CampMaterials payout through MetaProgression, and `RunEnded` result UI.
+- KAN-47: Added the V0.4 `MetaProgression` storage foundation with default snapshot fields for growth stones, camp materials, persistent upgrades, camp level, owned artifacts, and equipped artifact id.
+- KAN-47: Added server-owned DataStore loading/saving with memory fallback and `MetaProgressionChanged` server-to-client snapshot synchronization.
+- KAN-47: Added a lightweight client controller that only receives server snapshots for future camp/result UI display.
+- KAN-47: Changed the known Studio API Services disabled path from a warning-style load failure to a one-time informational memory fallback message.
+
+### Validation
+
+- `rojo build default.project.json -o build\game.rbxl` passed.
+- `git diff --check` passed.
+- KAN-48 Studio QA passed: result UI shows survival/kills/level/rewards, combat stops after HP reaches 0, and server logs `RunResult` with expected reward values.
+- Roblox Studio QA passed: API Services disabled path uses memory fallback without the previous warning, API Services enabled path starts without MetaProgression warnings/errors, and no client write RemoteEvent exists for direct progression mutation.
+
 ## 2026-05-13
 
 ### Changed

@@ -53,6 +53,16 @@ function EnemyService.count()
 	return total
 end
 
+function EnemyService.clear()
+	for enemy in pairs(enemies) do
+		if enemy.Parent then
+			enemy:Destroy()
+		end
+	end
+
+	enemies = {}
+end
+
 function EnemyService.spawn(enemyType, position)
 	local definition = EnemyDefinitions[enemyType]
 	if not definition then

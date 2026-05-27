@@ -11,6 +11,7 @@ local WaveService = {}
 
 local elapsed = 0
 local spawnAccumulator = 0
+local hadAlivePlayers = false
 
 local function getSpawnInterval()
 	return math.max(
@@ -42,6 +43,18 @@ function WaveService.start()
 			return
 		end
 
+		local alivePlayers = PlayerStateService.getAlivePlayers()
+		if #alivePlayers == 0 then
+			hadAlivePlayers = false
+			return
+		end
+
+		if not hadAlivePlayers then
+			elapsed = 0
+			spawnAccumulator = 0
+			hadAlivePlayers = true
+		end
+
 		elapsed += deltaTime
 		spawnAccumulator += deltaTime
 
@@ -52,11 +65,6 @@ function WaveService.start()
 		spawnAccumulator = 0
 
 		if EnemyService.count() >= WaveConfig.MaxEnemies then
-			return
-		end
-
-		local alivePlayers = PlayerStateService.getAlivePlayers()
-		if #alivePlayers == 0 then
 			return
 		end
 

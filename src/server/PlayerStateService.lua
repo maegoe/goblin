@@ -4,19 +4,29 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
+local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
+
+local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
+local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
+local EnemyService
 
 local PlayerStateService = {}
 
 local states = {}
 local statsRemote
 local choicesRemote
+local startRunRemote
 local statsAccumulator = 0
 local LEVEL_UP_CHOICE_COUNT = 3
 local DEFAULT_RARITY = "common"
 local DEFAULT_RARITY_LABEL = "Common"
 local DEFAULT_RARITY_COLOR = { 190, 198, 210 }
+
+local function logState(player, message)
+	print(string.format("[goblin][PlayerState] %s: %s", player.Name, message))
+end
 
 local function getRarityConfig()
 	local rarityConfig = UpgradeDefinitions.Rarity
@@ -251,19 +261,51 @@ local function getRandomUpgradeChoices(state)
 	return choices
 end
 
-local function createState()
+local function getPersistentUpgradeLevel(snapshot, upgradeId)
+	local upgrades = snapshot and snapshot.PersistentUpgrades
+	if type(upgrades) ~= "table" then
+		return 0
+	end
+
+	local level = upgrades[upgradeId]
+	if type(level) ~= "number" then
+		return 0
+	end
+
+	return math.max(0, math.floor(level))
+end
+
+local function getPersistentStatBonus(snapshot, statKey)
+	local bonus = 0
+	for _, upgradeId in ipairs(PersistentUpgradeDefinitions.Order) do
+		local definition = PersistentUpgradeDefinitions[upgradeId]
+		if definition and definition.StatKey == statKey then
+			bonus += getPersistentUpgradeLevel(snapshot, upgradeId) * definition.ValuePerLevel
+		end
+	end
+
+	return bonus
+end
+
+local function createState(player, runActive)
+	local progression = MetaProgressionService.getSnapshot(player)
+	local maxHealth = PlayerDefaults.MaxHealth + getPersistentStatBonus(progression, "MaxHealth")
+	local attackDamage = PlayerDefaults.AttackDamage + getPersistentStatBonus(progression, "AttackDamage")
+
 	return {
-		MaxHealth = PlayerDefaults.MaxHealth,
-		Health = PlayerDefaults.MaxHealth,
+		MaxHealth = maxHealth,
+		Health = maxHealth,
 		MoveSpeed = PlayerDefaults.MoveSpeed,
-		AttackDamage = PlayerDefaults.AttackDamage,
+		AttackDamage = attackDamage,
 		AttackInterval = PlayerDefaults.AttackInterval,
 		AttackRange = PlayerDefaults.AttackRange,
 		Level = PlayerDefaults.StartLevel,
 		Experience = PlayerDefaults.StartExperience,
 		ExperienceToNextLevel = getExperienceToNextLevel(PlayerDefaults.StartLevel),
 		SurvivalTime = 0,
-		Alive = true,
+		KillCount = 0,
+		Alive = runActive == true,
+		RunActive = runActive == true,
 		PendingChoices = nil,
 		Upgrades = {},
 		ExplosiveBolt = nil,
@@ -354,17 +396,48 @@ function PlayerStateService.damagePlayer(player, amount)
 		return
 	end
 
+	local previousHealth = state.Health
 	state.Health = math.max(0, state.Health - amount)
 
 	if state.Health <= 0 then
 		state.Alive = false
-		local humanoid = getHumanoid(player)
-		if humanoid then
-			humanoid.Health = 0
-		end
+		state.RunActive = false
+		state.PendingChoices = nil
+		logState(player, string.format(
+			"defeated by game HP; damage=%s health=%s->0 survival=%.1f level=%d xp=%d. Roblox Humanoid death was not triggered.",
+			tostring(amount),
+			tostring(previousHealth),
+			state.SurvivalTime,
+			state.Level,
+			state.Experience
+		))
+		RunResultService.endRun(player, state, "Defeat")
 	end
 
 	PlayerStateService.publish(player)
+end
+
+function PlayerStateService.startRun(player)
+	local currentState = states[player]
+	if currentState and currentState.RunActive then
+		return false
+	end
+
+	if not EnemyService then
+		EnemyService = require(script.Parent:WaitForChild("EnemyService"))
+	end
+	EnemyService.clear()
+
+	states[player] = createState(player, true)
+	PlayerStateService.applyMovement(player)
+	PlayerStateService.publish(player)
+	logState(player, string.format(
+		"StartRun accepted; maxHealth=%d attackDamage=%d",
+		states[player].MaxHealth,
+		states[player].AttackDamage
+	))
+
+	return true
 end
 
 local function applyUpgradeDefinition(state, definition, value)
@@ -463,6 +536,15 @@ function PlayerStateService.addExperience(player, amount)
 	PlayerStateService.publish(player)
 end
 
+function PlayerStateService.recordKill(player)
+	local state = states[player]
+	if not state or not state.Alive then
+		return
+	end
+
+	state.KillCount += 1
+end
+
 function PlayerStateService.applyUpgrade(player, upgradeId)
 	local state = states[player]
 	if not state or not state.PendingChoices then
@@ -503,6 +585,24 @@ local function onCharacterAdded(player)
 		return
 	end
 
+	logState(player, string.format(
+		"CharacterAdded; runActive=%s alive=%s health=%s level=%s xp=%s",
+		tostring(state.RunActive),
+		tostring(state.Alive),
+		tostring(state.Health),
+		tostring(state.Level),
+		tostring(state.Experience)
+	))
+
+	if not state.RunActive then
+		state.Health = 0
+		state.Alive = false
+		state.PendingChoices = nil
+		PlayerStateService.publish(player)
+		logState(player, "CharacterAdded ignored because run is already defeated; combat state was not restarted.")
+		return
+	end
+
 	state.Health = state.MaxHealth
 	state.Alive = true
 	state.PendingChoices = nil
@@ -512,7 +612,7 @@ local function onCharacterAdded(player)
 end
 
 local function onPlayerAdded(player)
-	states[player] = createState()
+	states[player] = createState(player, false)
 
 	player.CharacterAdded:Connect(function()
 		onCharacterAdded(player)
@@ -526,6 +626,10 @@ end
 function PlayerStateService.start()
 	statsRemote = Remotes.get(Remotes.Names.PlayerStatsChanged)
 	choicesRemote = Remotes.get(Remotes.Names.LevelUpChoices)
+	startRunRemote = Remotes.get(Remotes.Names.StartRun)
+	startRunRemote.OnServerEvent:Connect(function(player)
+		PlayerStateService.startRun(player)
+	end)
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	Players.PlayerRemoving:Connect(function(player)

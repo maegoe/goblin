@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GoblinAppearanceStages = require(Shared:WaitForChild("GoblinAppearanceStages"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local HudController = {}
@@ -14,6 +15,9 @@ local experienceFill
 local experienceText
 local timeText
 local statusText
+local appearanceImage
+local appearanceText
+local latestAppearanceStage = GoblinAppearanceStages.getStageForSnapshot(nil)
 
 local function formatTime(totalSeconds)
 	local minutes = math.floor(totalSeconds / 60)
@@ -86,6 +90,39 @@ local function buildHud()
 
 	statusText = createLabel(screenGui, "StatusText", "", UDim2.fromScale(0.36, 0.08), UDim2.fromScale(0.28, 0.06))
 	statusText.TextXAlignment = Enum.TextXAlignment.Center
+
+	local appearancePanel = Instance.new("Frame")
+	appearancePanel.Name = "AppearancePanel"
+	appearancePanel.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
+	appearancePanel.BackgroundTransparency = 0.2
+	appearancePanel.BorderSizePixel = 0
+	appearancePanel.Position = UDim2.fromOffset(322, 18)
+	appearancePanel.Size = UDim2.fromOffset(88, 104)
+	appearancePanel.Parent = screenGui
+
+	appearanceImage = Instance.new("ImageLabel")
+	appearanceImage.Name = "StageBadge"
+	appearanceImage.BackgroundTransparency = 1
+	appearanceImage.Position = UDim2.fromOffset(16, 8)
+	appearanceImage.Size = UDim2.fromOffset(56, 56)
+	appearanceImage.Parent = appearancePanel
+
+	appearanceText = createLabel(appearancePanel, "StageText", "Stage 0", UDim2.fromOffset(8, 70), UDim2.fromOffset(72, 24))
+	appearanceText.TextXAlignment = Enum.TextXAlignment.Center
+end
+
+local function updateAppearance(payload)
+	if type(payload) == "table" and type(payload.appearanceStage) == "table" then
+		latestAppearanceStage = payload.appearanceStage
+	end
+	if not appearanceImage or not appearanceText then
+		return
+	end
+
+	if type(latestAppearanceStage.BadgeAssetId) == "string" then
+		appearanceImage.Image = latestAppearanceStage.BadgeAssetId
+	end
+	appearanceText.Text = string.format("Stage %d", latestAppearanceStage.Stage or 0)
 end
 
 local function updateHud(stats)
@@ -113,8 +150,18 @@ end
 
 function HudController.start()
 	buildHud()
+	updateAppearance()
+
+	local snapshotRemote = Remotes.get(Remotes.FunctionNames.GetMetaProgressionSnapshot)
+	local ok, payload = pcall(function()
+		return snapshotRemote:InvokeServer()
+	end)
+	if ok then
+		updateAppearance(payload)
+	end
 
 	Remotes.get(Remotes.Names.PlayerStatsChanged).OnClientEvent:Connect(updateHud)
+	Remotes.get(Remotes.Names.MetaProgressionChanged).OnClientEvent:Connect(updateAppearance)
 end
 
 return HudController
