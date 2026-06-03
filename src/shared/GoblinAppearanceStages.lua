@@ -57,6 +57,7 @@ function GoblinAppearanceStages.getStageForSnapshot(snapshot)
 
 	return {
 		Stage = selected.Stage,
+		Level = selected.Stage,
 		RequiredTotalPersistentUpgradeLevel = selected.RequiredTotalPersistentUpgradeLevel,
 		DisplayNameKey = selected.DisplayNameKey,
 		DisplayName = selected.DisplayName,

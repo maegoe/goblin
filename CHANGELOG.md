@@ -1,5 +1,74 @@
 # Changelog
 
+## 2026-06-03
+
+### Changed
+
+- KAN-72: Generated the V1.0 growth choice icon PNG set with imagegen and chroma-key alpha conversion, uploaded all five files through Tarmac/Open Cloud using the `.env` Open Cloud key, and registered the resulting ids under `Assets.v1_0.growth_icons`.
+- KAN-72/KAN-81: Wired the level-up choice cards to use the registered growth icon assets when available while preserving fallback text labels for missing or unloaded asset registry entries.
+- KAN-80: Added short-lived floating damage number billboards when enemies take damage, covering both direct bolt hits and explosion splash damage.
+- KAN-81: Changed the level-up choice UI from plain vertical buttons to responsive choice cards: three horizontal cards on wide screens, vertical cards on mobile/portrait screens, with stable icon areas and fallback text icons mapped to each growth choice.
+- KAN-79: Removed jump behavior by disabling Humanoid jumping on server/client and hiding the default mobile JumpButton.
+- KAN-78: Added shared arena bounds, generated invisible boundary walls, clamped enemy spawn/movement positions inside the finite arena, and required clamped spawn positions to stay away from the player.
+- KAN-77: Treat Roblox respawn/reset during an active in-game run as immediate Defeat, using the existing run-result and reward flow instead of restoring the player to full health.
+- No-ticket hotfix: Changed the goblin growth display wording from `Stage` to `Level` in the HUD and camp UI while keeping the existing appearance-stage payload compatible.
+
+### Validation
+
+- KAN-72 validation passed: initial registry check found no existing KAN-72 asset entries, all five generated PNGs validated as 128x128 RGBA with transparent corners and non-empty foreground coverage, Tarmac/Open Cloud upload succeeded, `Assets.lua`/`tarmac-manifest.toml` were merged to preserve existing v0_4 registry entries while adding only `v1_0.growth_icons`, `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio rendered UI QA remains pending.
+- KAN-80 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user Studio runtime QA confirmed damage numbers are readable, match applied damage, do not overly obscure combat, and preserve enemy death/reward/level-up flow.
+- KAN-81 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio PC/mobile level-up UI readability and selection-flow QA remain pending.
+- KAN-79 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user Studio runtime QA confirmed JumpButton is hidden, default jump input does not jump, and baseline combat movement still works.
+- KAN-78 static validation passed after the player-near spawn fix: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio boundary collision and repeated spawn runtime QA remain pending.
+- KAN-77 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user Studio runtime QA confirmed reset/respawn immediately enters the existing defeat result and reward flow.
+- `rojo build default.project.json -o build\game.rbxl` passed.
+- `git diff --check` passed with existing LF-to-CRLF working-copy warnings only.
+
+## 2026-05-31
+
+### Changed
+
+- KAN-75/KAN-66 follow-up: Added `background_music_sample.mp3` under `assets/audio/v1_0/music/` for Asphalt audio registration and wired a client background music controller that loops `AudioAssets.v1_0.music.background_music_sample` when the generated Roblox audio asset id is available.
+- KAN-75/KAN-66 follow-up: Uploaded the background music MP3 through Asphalt and generated `rbxassetid://109169515800716`.
+- KAN-66 follow-up: Changed background music playback from a single hard loop to two alternating `Sound` instances with 1.5s fade in/out crossfade to mask imperfect MP3 loop seams.
+- KAN-75/KAN-66 follow-up: Replaced the background music source with the Audacity fade-adjusted WAV and uploaded it through Asphalt as `rbxassetid://139886475979592`.
+
+### Validation
+
+- Local Asphalt debug sync passed with the direct Rokit-managed Asphalt 2.0.0 binary and included `assets/audio/v1_0/music/background_music_sample.mp3`.
+- Asphalt cloud sync uploaded the new background music asset and post-upload `asphalt sync cloud --dry-run` reported no new assets.
+- `rojo build default.project.json -o build\game.rbxl` passed.
+- Background music crossfade static validation passed with `rojo build default.project.json -o build\game.rbxl` and `git diff --check`.
+- WAV replacement validation passed: `asphalt sync debug`, `asphalt sync cloud`, post-upload `asphalt sync cloud --dry-run`, and `rojo build default.project.json -o build\game.rbxl`.
+
+## 2026-05-30
+
+### Changed
+
+- KAN-76: Accepted the seven ElevenLabs Free MP3 SFX files as the V1.0 QA candidate audio set after user listening QA, and recorded the completion decision in Confluence and Jira.
+- KAN-75: Ran the Asphalt cloud sync against the accepted KAN-76 MP3 candidates, generating `asphalt.lock.toml` and `src/shared/AudioAssets.luau` with seven Roblox audio asset ids.
+- KAN-75: Recorded user-confirmed Roblox Studio `Sound.SoundId` playback QA PASS for all seven generated audio assets.
+- KAN-66: Connected the seven V1.0 feedback audio events through `FeedbackAudioController`, a server `FeedbackService`, and the generated `AudioAssets.luau` ids.
+- KAN-66: Recorded user Studio runtime QA PASS for all seven in-game feedback audio triggers.
+- KAN-67: Hardened MetaProgression fallback behavior so DataStore save failures keep the server-authoritative memory snapshot active for QA, expose the last storage error, and save all active sessions on shutdown.
+
+### Validation
+
+- KAN-76 user listening QA passed for the current V1.0 QA candidate set. V1.0 will use these QA candidates; KAN-75 Asphalt upload and KAN-66 runtime hookup remain separate follow-up work.
+- KAN-75 Asphalt pipeline validation passed: `asphalt sync debug` processed all seven MP3s, `asphalt sync cloud` uploaded them, post-upload `asphalt sync cloud --dry-run` reported no new assets, `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with the existing `CHANGELOG.md` LF to CRLF warning only, and user Studio playback QA confirmed every generated `Sound.SoundId` asset plays successfully.
+- KAN-66 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` reported only existing LF to CRLF warnings, and user Studio runtime QA confirmed all seven in-game event triggers play successfully.
+- KAN-67 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` reported only existing LF to CRLF warnings, user Studio DataStore stop/start persistence QA confirmed values are retained, and user Studio API Services disabled fallback QA confirmed warning logs do not block gameplay while current-session values are still reflected.
+
+## 2026-05-29
+
+### Changed
+
+- KAN-76: Generated all seven ElevenLabs Free QA/draft MP3 SFX candidates for the V1.0 combat feedback request under `assets/audio/v1_0/...`, with JSONL manifest records in `_workspace/goblin-dev/sfx-generation-manifest.jsonl`.
+
+### Validation
+
+- KAN-76 candidate generation recorded each output as `free-plan-qa-candidate` with `commercial_use: not-cleared`. `camp_purchase_01.mp3` was generated at 0.5s instead of the default 1.0s to stay within the remaining Free tier credit quota; listening QA, commercial-use clearance, KAN-75 Asphalt upload, and KAN-66 runtime hookup remain pending.
+
 ## 2026-05-28
 
 ### Changed

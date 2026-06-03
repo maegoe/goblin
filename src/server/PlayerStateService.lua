@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
+local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
 local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -11,6 +12,7 @@ local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 
 local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
 local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
+local FeedbackService = require(script.Parent:WaitForChild("FeedbackService"))
 local EnemyService
 
 local PlayerStateService = {}
@@ -370,6 +372,7 @@ local function createState(player, runActive)
 		Upgrades = {},
 		EquippedArtifactId = equippedArtifactId,
 		ExplosiveBolt = explosiveBolt,
+		ActiveCharacter = nil,
 	}
 end
 
@@ -389,6 +392,20 @@ local function getHumanoid(player)
 	end
 
 	return character:FindFirstChildOfClass("Humanoid")
+end
+
+function PlayerStateService.applyJumpDisabled(player)
+	local humanoid = getHumanoid(player)
+	if not humanoid then
+		return
+	end
+
+	humanoid.AutoJumpEnabled = false
+	humanoid.UseJumpPower = true
+	humanoid.JumpPower = 0
+	humanoid.JumpHeight = 0
+	humanoid.Jump = false
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 end
 
 function PlayerStateService.applyMovement(player)
@@ -414,6 +431,29 @@ function PlayerStateService.publish(player)
 		survivalTime = state.SurvivalTime,
 		alive = state.Alive,
 	})
+end
+
+local function endRunAsDefeat(player, state, source)
+	if not state or not state.RunActive then
+		return false
+	end
+
+	state.Health = 0
+	state.Alive = false
+	state.RunActive = false
+	state.PendingChoices = nil
+
+	logState(player, string.format(
+		"defeated by %s; survival=%.1f level=%d xp=%d",
+		source,
+		state.SurvivalTime,
+		state.Level,
+		state.Experience
+	))
+	RunResultService.endRun(player, state, "Defeat")
+	PlayerStateService.publish(player)
+
+	return true
 end
 
 function PlayerStateService.getState(player)
@@ -459,20 +499,16 @@ function PlayerStateService.damagePlayer(player, amount)
 
 	local previousHealth = state.Health
 	state.Health = math.max(0, state.Health - amount)
+	FeedbackService.play(player, FeedbackEvents.PlayerHit)
 
 	if state.Health <= 0 then
-		state.Alive = false
-		state.RunActive = false
-		state.PendingChoices = nil
 		logState(player, string.format(
-			"defeated by game HP; damage=%s health=%s->0 survival=%.1f level=%d xp=%d. Roblox Humanoid death was not triggered.",
+			"game HP depleted; damage=%s health=%s->0. Roblox Humanoid death was not triggered.",
 			tostring(amount),
-			tostring(previousHealth),
-			state.SurvivalTime,
-			state.Level,
-			state.Experience
+			tostring(previousHealth)
 		))
-		RunResultService.endRun(player, state, "Defeat")
+		endRunAsDefeat(player, state, "game HP")
+		return
 	end
 
 	PlayerStateService.publish(player)
@@ -490,7 +526,9 @@ function PlayerStateService.startRun(player)
 	EnemyService.clear()
 
 	states[player] = createState(player, true)
+	states[player].ActiveCharacter = player.Character
 	PlayerStateService.applyMovement(player)
+	PlayerStateService.applyJumpDisabled(player)
 	PlayerStateService.publish(player)
 	logState(player, string.format(
 		"StartRun accepted; maxHealth=%d attackDamage=%d",
@@ -649,11 +687,33 @@ function PlayerStateService.applyUpgrade(player, upgradeId)
 	return true
 end
 
+local function connectHumanoidDeath(player, character)
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+
+	humanoid.Died:Connect(function()
+		local state = states[player]
+		if state and state.RunActive and state.Alive then
+			endRunAsDefeat(player, state, "Roblox Humanoid death or reset")
+		end
+	end)
+end
+
 local function onCharacterAdded(player)
 	local state = states[player]
 	if not state then
 		return
 	end
+
+	local character = player.Character
+	connectHumanoidDeath(player, character)
+	PlayerStateService.applyJumpDisabled(player)
 
 	logState(player, string.format(
 		"CharacterAdded; runActive=%s alive=%s health=%s level=%s xp=%s",
@@ -673,15 +733,23 @@ local function onCharacterAdded(player)
 		return
 	end
 
+	if state.ActiveCharacter and character and state.ActiveCharacter ~= character then
+		endRunAsDefeat(player, state, "active-run CharacterAdded respawn")
+		return
+	end
+
+	state.ActiveCharacter = character
 	state.Health = state.MaxHealth
 	state.Alive = true
 	state.PendingChoices = nil
 
 	PlayerStateService.applyMovement(player)
+	PlayerStateService.applyJumpDisabled(player)
 	PlayerStateService.publish(player)
 end
 
 local function onPlayerAdded(player)
+	player.AutoJumpEnabled = false
 	states[player] = createState(player, false)
 
 	player.CharacterAdded:Connect(function()

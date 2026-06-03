@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local ArenaConfig = require(Shared:WaitForChild("ArenaConfig"))
 local WaveConfig = require(Shared:WaitForChild("WaveConfig"))
 
 local EnemyService = require(script.Parent:WaitForChild("EnemyService"))
@@ -87,17 +88,57 @@ local function chooseEnemyType()
 	return WaveConfig.EnemyType
 end
 
+local function getFlatDistance(a, b)
+	local delta = a - b
+	return Vector3.new(delta.X, 0, delta.Z).Magnitude
+end
+
+local function createSpawnCandidate(rootPosition, angle, radius)
+	local offset = Vector3.new(math.cos(angle) * radius, 2, math.sin(angle) * radius)
+	return ArenaConfig.clampToArena(rootPosition + offset, ArenaConfig.SpawnMargin)
+end
+
+local function getSpawnPosition(rootPosition)
+	local minimumDistance = WaveConfig.MinimumSpawnDistanceFromPlayer or 0
+	local attempts = WaveConfig.SpawnPositionAttempts or 1
+	local fallbackPosition = nil
+	local fallbackDistance = -math.huge
+
+	for _ = 1, attempts do
+		local angle = math.random() * math.pi * 2
+		local radius = WaveConfig.SpawnRadius + (math.random() * WaveConfig.SpawnRadiusJitter)
+		local candidate = createSpawnCandidate(rootPosition, angle, radius)
+		local distance = getFlatDistance(candidate, rootPosition)
+
+		if distance >= minimumDistance then
+			return candidate
+		end
+
+		if distance > fallbackDistance then
+			fallbackPosition = candidate
+			fallbackDistance = distance
+		end
+	end
+
+	local centerDirection = Vector3.new(-rootPosition.X, 0, -rootPosition.Z)
+	if centerDirection.Magnitude > 0 then
+		local radius = WaveConfig.SpawnRadius + WaveConfig.SpawnRadiusJitter
+		local candidate = createSpawnCandidate(rootPosition, math.atan2(centerDirection.Z, centerDirection.X), radius)
+		if getFlatDistance(candidate, rootPosition) > fallbackDistance then
+			return candidate
+		end
+	end
+
+	return fallbackPosition or ArenaConfig.clampToArena(rootPosition, ArenaConfig.SpawnMargin)
+end
+
 local function spawnNearPlayer(player)
 	local root = PlayerStateService.getRoot(player)
 	if not root then
 		return
 	end
 
-	local angle = math.random() * math.pi * 2
-	local radius = WaveConfig.SpawnRadius + (math.random() * WaveConfig.SpawnRadiusJitter)
-	local offset = Vector3.new(math.cos(angle) * radius, 2, math.sin(angle) * radius)
-
-	EnemyService.spawn(chooseEnemyType(), root.Position + offset)
+	EnemyService.spawn(chooseEnemyType(), getSpawnPosition(root.Position))
 end
 
 function WaveService.start()

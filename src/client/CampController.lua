@@ -172,8 +172,8 @@ local function updateCamp()
 	end
 	if appearanceText then
 		appearanceText.Text = string.format(
-			"Growth Stage %d    %s",
-			appearanceStage.Stage or 0,
+			"Goblin Level %d    %s",
+			appearanceStage.Level or appearanceStage.Stage or 0,
 			appearanceStage.DisplayName or "Sprout Goblin"
 		)
 	end
@@ -248,8 +248,8 @@ local function buildCamp()
 
 	local panel = createImage(root, "MainPanel", campAssets.camp_panel_main_default_768x512, UDim2.fromScale(0.055, 0.08), UDim2.fromScale(0.59, 0.79))
 	createText(panel, "Title", "Goblin Camp", UDim2.fromScale(0.09, 0.105), UDim2.fromScale(0.42, 0.07), 26)
-	appearanceBadge = createImage(panel, "GrowthStageBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.83, 0.09), UDim2.fromScale(0.08, 0.115))
-	appearanceText = createText(panel, "GrowthStageText", "", UDim2.fromScale(0.55, 0.115), UDim2.fromScale(0.25, 0.06), 13)
+	appearanceBadge = createImage(panel, "GrowthLevelBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.83, 0.09), UDim2.fromScale(0.08, 0.115))
+	appearanceText = createText(panel, "GrowthLevelText", "", UDim2.fromScale(0.55, 0.115), UDim2.fromScale(0.25, 0.06), 13)
 	appearanceText.TextXAlignment = Enum.TextXAlignment.Right
 	createImage(panel, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.125, 0.22), UDim2.fromScale(0.035, 0.055))
 	createImage(panel, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.365, 0.22), UDim2.fromScale(0.035, 0.055))

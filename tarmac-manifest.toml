@@ -157,3 +157,28 @@ packable = false
 hash = "dda32eb1e47f41e9513109b91c94c24892b337cea0b5897d792ccce5c68ddfd4"
 id = 132893170082324
 packable = false
+
+[inputs."assets/v1_0/growth_icons/icon_growth_attack_128x128.png"]
+hash = "0fc16878ae17c1d332874f002eb7033d8ba73b7c70b4dad3dc6c0d0d7d34ad1c"
+id = 137665406186448
+packable = false
+
+[inputs."assets/v1_0/growth_icons/icon_growth_heal_128x128.png"]
+hash = "81a08972629bc42b4c69c7526e815c2835b5c1a17f8d8a6f0d74eedb19ceb775"
+id = 90248429091157
+packable = false
+
+[inputs."assets/v1_0/growth_icons/icon_growth_reward_128x128.png"]
+hash = "d031d54febff15bec5707bb6191156929d1285bfe4762aa51c14eab194bf1802"
+id = 135330693670877
+packable = false
+
+[inputs."assets/v1_0/growth_icons/icon_growth_speed_128x128.png"]
+hash = "c258bff64cda22c3d1d04d778c9c019a01e21e03160138aea335d9fae11a4673"
+id = 139558625302967
+packable = false
+
+[inputs."assets/v1_0/growth_icons/icon_growth_utility_128x128.png"]
+hash = "63a4dba8129a4774130df1dcef143940241f3643aa4ddf672d6e41cc14d411d0"
+id = 73176570793771
+packable = false

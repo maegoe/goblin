@@ -19,6 +19,7 @@ local progressionRemote
 local sessions = {}
 local memoryFallback = {}
 local started = false
+local hasBoundCloseSave = false
 local hasLoggedStudioFallback = false
 
 local function cloneValue(value)
@@ -181,7 +182,7 @@ local function saveSession(player)
 		session.storageMode = "MemoryFallback"
 		session.lastError = tostring(err)
 		warn("[goblin] MetaProgression save failed, using memory fallback: " .. tostring(err))
-		return false
+		return true
 	end
 
 	session.storageMode = "DataStore"
@@ -236,6 +237,12 @@ local function onPlayerRemoving(player)
 	sessions[player] = nil
 end
 
+local function saveAllSessions()
+	for player in pairs(sessions) do
+		saveSession(player)
+	end
+end
+
 function MetaProgressionService.getSnapshot(player)
 	local session = sessions[player]
 	if not session then
@@ -252,6 +259,15 @@ function MetaProgressionService.getStorageMode(player)
 	end
 
 	return session.storageMode
+end
+
+function MetaProgressionService.getLastError(player)
+	local session = sessions[player]
+	if not session then
+		return nil
+	end
+
+	return session.lastError
 end
 
 function MetaProgressionService.update(player, mutator)
@@ -308,6 +324,10 @@ function MetaProgressionService.start()
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	Players.PlayerRemoving:Connect(onPlayerRemoving)
+	if not hasBoundCloseSave then
+		hasBoundCloseSave = true
+		game:BindToClose(saveAllSessions)
+	end
 
 	for _, player in ipairs(Players:GetPlayers()) do
 		onPlayerAdded(player)

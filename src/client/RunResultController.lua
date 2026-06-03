@@ -3,7 +3,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Assets = require(Shared:WaitForChild("Assets"))
+local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+
+local Client = script.Parent
+local FeedbackAudioController = require(Client:WaitForChild("FeedbackAudioController"))
 
 local RunResultController = {}
 
@@ -128,6 +132,9 @@ local function showResult(result)
 	)
 
 	resultGui.Enabled = true
+	if (result.GrowthStonesEarned or 0) > 0 or (result.CampMaterialsEarned or 0) > 0 then
+		FeedbackAudioController.play(FeedbackEvents.RewardGain)
+	end
 end
 
 function RunResultController.start()

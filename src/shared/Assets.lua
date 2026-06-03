@@ -38,4 +38,13 @@ return {
 			combat_monster_default_512x512 = "rbxassetid://132893170082324",
 		},
 	},
+	v1_0 = {
+		growth_icons = {
+			icon_growth_attack_128x128 = "rbxassetid://137665406186448",
+			icon_growth_heal_128x128 = "rbxassetid://90248429091157",
+			icon_growth_reward_128x128 = "rbxassetid://135330693670877",
+			icon_growth_speed_128x128 = "rbxassetid://139558625302967",
+			icon_growth_utility_128x128 = "rbxassetid://73176570793771",
+		},
+	},
 }

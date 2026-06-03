@@ -2,8 +2,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CampConfig = require(Shared:WaitForChild("CampConfig"))
+local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
+local FeedbackService = require(script.Parent:WaitForChild("FeedbackService"))
 local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
 
 local CampService = {}
@@ -55,6 +57,7 @@ function CampService.purchaseCampLevel(player)
 		currentLevel + 1,
 		cost
 	))
+	FeedbackService.play(player, FeedbackEvents.CampPurchase)
 
 	return true, nil
 end

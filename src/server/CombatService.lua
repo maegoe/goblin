@@ -5,10 +5,12 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 
 local EnemyService = require(script.Parent:WaitForChild("EnemyService"))
 local ExperienceService = require(script.Parent:WaitForChild("ExperienceService"))
+local FeedbackService = require(script.Parent:WaitForChild("FeedbackService"))
 local PlayerStateService = require(script.Parent:WaitForChild("PlayerStateService"))
 
 local CombatService = {}
@@ -76,6 +78,7 @@ local function applyExplosion(player, position, directHitEnemy, directDamage)
 	local damage = math.max(1, math.floor((directDamage * explosion.DamageMultiplier) + 0.5))
 	for _, enemy in ipairs(EnemyService.getEnemiesInRadius(position, explosion.Radius, directHitEnemy)) do
 		local killInfo = EnemyService.damage(enemy, damage)
+		FeedbackService.play(player, killInfo and FeedbackEvents.EnemyDeath or FeedbackEvents.EnemyHit)
 		ExperienceService.awardKill(player, killInfo)
 	end
 
@@ -128,6 +131,7 @@ local function updateProjectiles(deltaTime)
 		if direction.Magnitude <= 2.5 then
 			local impactPosition = data.Target.Position
 			local killInfo = EnemyService.damage(data.Target, data.Damage)
+			FeedbackService.play(data.Owner, killInfo and FeedbackEvents.EnemyDeath or FeedbackEvents.EnemyHit)
 			ExperienceService.awardKill(data.Owner, killInfo)
 			applyExplosion(data.Owner, impactPosition, data.Target, data.Damage)
 			projectiles[projectile] = nil

@@ -101,13 +101,13 @@ local function buildHud()
 	appearancePanel.Parent = screenGui
 
 	appearanceImage = Instance.new("ImageLabel")
-	appearanceImage.Name = "StageBadge"
+	appearanceImage.Name = "LevelBadge"
 	appearanceImage.BackgroundTransparency = 1
 	appearanceImage.Position = UDim2.fromOffset(16, 8)
 	appearanceImage.Size = UDim2.fromOffset(56, 56)
 	appearanceImage.Parent = appearancePanel
 
-	appearanceText = createLabel(appearancePanel, "StageText", "Stage 0", UDim2.fromOffset(8, 70), UDim2.fromOffset(72, 24))
+	appearanceText = createLabel(appearancePanel, "LevelText", "Level 0", UDim2.fromOffset(8, 70), UDim2.fromOffset(72, 24))
 	appearanceText.TextXAlignment = Enum.TextXAlignment.Center
 end
 
@@ -122,7 +122,7 @@ local function updateAppearance(payload)
 	if type(latestAppearanceStage.BadgeAssetId) == "string" then
 		appearanceImage.Image = latestAppearanceStage.BadgeAssetId
 	end
-	appearanceText.Text = string.format("Stage %d", latestAppearanceStage.Stage or 0)
+	appearanceText.Text = string.format("Level %d", latestAppearanceStage.Level or latestAppearanceStage.Stage or 0)
 end
 
 local function updateHud(stats)
