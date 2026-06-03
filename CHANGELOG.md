@@ -2,6 +2,10 @@
 
 ## 2026-06-03
 
+### Added
+
+- KAN-83: Registered `assets/v0_4/camp_ui/slime-monster-idle-10f-sheet.png` through Tarmac as `rbxassetid://136162799387455` and added the generated asset reference `Assets.v0_4.camp_ui.slime_monster_idle_10f_sheet`.
+
 ### Changed
 
 - KAN-72: Generated the V1.0 growth choice icon PNG set with imagegen and chroma-key alpha conversion, uploaded all five files through Tarmac/Open Cloud using the `.env` Open Cloud key, and registered the resulting ids under `Assets.v1_0.growth_icons`.
@@ -15,6 +19,7 @@
 
 ### Validation
 
+- KAN-83 validation passed: `slime-monster-idle-10f-sheet.png` verified as 5120x512 PNG RGBA with alpha matching a 10-frame 512x512 idle sheet layout, Tarmac Roblox sync uploaded `rbxassetid://136162799387455`, `tarmac --api-key "$ROBLOX_API_KEY" sync --target none tarmac.toml` passed after upload, `rojo build default.project.json -o build/game.rbxl` passed, and `git diff --check` passed.
 - KAN-72 validation passed: initial registry check found no existing KAN-72 asset entries, all five generated PNGs validated as 128x128 RGBA with transparent corners and non-empty foreground coverage, Tarmac/Open Cloud upload succeeded, `Assets.lua`/`tarmac-manifest.toml` were merged to preserve existing v0_4 registry entries while adding only `v1_0.growth_icons`, `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio rendered UI QA remains pending.
 - KAN-80 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user Studio runtime QA confirmed damage numbers are readable, match applied damage, do not overly obscure combat, and preserve enemy death/reward/level-up flow.
 - KAN-81 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio PC/mobile level-up UI readability and selection-flow QA remain pending.
