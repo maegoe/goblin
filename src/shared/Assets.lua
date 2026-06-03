@@ -32,6 +32,7 @@ return {
 			icon_growth_stone_default_256x256 = "rbxassetid://86589204757544",
 			icon_upgrade_attack_default_256x256 = "rbxassetid://92224725940707",
 			icon_upgrade_health_default_256x256 = "rbxassetid://81322283003770",
+			slime_monster_idle_10f_sheet = "rbxassetid://136162799387455",
 		},
 	},
 }

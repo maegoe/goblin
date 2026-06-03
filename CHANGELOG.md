@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-03
+
+### Added
+
+- KAN-83: Registered `assets/v0_4/camp_ui/slime-monster-idle-10f-sheet.png` through Tarmac as `rbxassetid://136162799387455` and added the generated asset reference `Assets.v0_4.camp_ui["slime-monster-idle-10f-sheet"]`.
+
+### Validation
+
+- `slime-monster-idle-10f-sheet.png` verified as 5120x512 PNG RGBA with alpha, matching a 10-frame 512x512 idle sheet layout.
+- `tarmac --api-key "$ROBLOX_API_KEY" sync --target roblox --retry 2 --retry-delay 5 tarmac.toml` passed and uploaded the image to Roblox.
+- `tarmac --api-key "$ROBLOX_API_KEY" sync --target none tarmac.toml` passed after upload.
+- `rojo build default.project.json -o build/game.rbxl` passed.
+- `git diff --check` passed.
+
 ## 2026-05-14
 
 ### Added

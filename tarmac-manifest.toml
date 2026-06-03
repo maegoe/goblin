@@ -147,3 +147,8 @@ packable = false
 hash = "d9fd8f193afb53131ff5199d822c5e4e226bf00a84e6ca4a9c05903e5a9ce789"
 id = 81322283003770
 packable = false
+
+[inputs."assets/v0_4/camp_ui/slime-monster-idle-10f-sheet.png"]
+hash = "9e24a2c122c4a0eb12eca394057b591fb8c4769b9a356b0415a5d60565e88e62"
+id = 136162799387455
+packable = false
