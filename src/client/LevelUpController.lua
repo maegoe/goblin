@@ -97,14 +97,9 @@ local function applyChoiceLayout()
 		for _, button in ipairs(buttons) do
 			button.Size = UDim2.new(1, 0, 0.31, -8)
 			local icon = button:FindFirstChild("Icon")
-			local name = button:FindFirstChild("ChoiceName")
 			if icon then
 				icon.Size = UDim2.fromScale(0.22, 0.56)
 				icon.Position = UDim2.fromScale(0.06, 0.16)
-			end
-			if name then
-				name.Size = UDim2.fromScale(0.56, 0.18)
-				name.Position = UDim2.fromScale(0.36, 0.32)
 			end
 		end
 	else
@@ -121,14 +116,9 @@ local function applyChoiceLayout()
 		for _, button in ipairs(buttons) do
 			button.Size = UDim2.new(0.32, -8, 1, 0)
 			local icon = button:FindFirstChild("Icon")
-			local name = button:FindFirstChild("ChoiceName")
 			if icon then
 				icon.Size = UDim2.fromScale(0.32, 0.32)
 				icon.Position = UDim2.fromScale(0.08, 0.12)
-			end
-			if name then
-				name.Size = UDim2.fromScale(0.84, 0.14)
-				name.Position = UDim2.fromScale(0.08, 0.46)
 			end
 		end
 	end
@@ -222,13 +212,12 @@ local function createButton(parent, index)
 	name.Text = ""
 	name.TextColor3 = Color3.fromRGB(255, 255, 255)
 	name.TextScaled = true
-	name.TextWrapped = false
+	name.TextWrapped = true
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.TextYAlignment = Enum.TextYAlignment.Center
-	name.Size = UDim2.fromScale(0.84, 0.14)
-	name.Position = UDim2.fromScale(0.08, 0.46)
+	name.Size = UDim2.fromScale(0.52, 0.28)
+	name.Position = UDim2.fromScale(0.4, 0.29)
 	name.Parent = button
-	addTextSizeConstraint(name, 12, 18)
 
 	local description = Instance.new("TextLabel")
 	description.Name = "Description"
