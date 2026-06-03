@@ -7,8 +7,15 @@ local EnemyDefinitions = {
 		ContactInterval = 0.8,
 		ExperienceReward = 10,
 		Size = Vector3.new(4, 4, 4),
-		SpriteSize = Vector2.new(136, 136),
+		SpriteSize = Vector2.new(51, 51),
 		SpriteColor = Color3.fromRGB(255, 255, 255),
+		SpriteSheet = {
+			Image = "rbxassetid://89097748034856",
+			FrameSize = Vector2.new(128, 128),
+			Columns = 8,
+			FrameCount = 8,
+			FramesPerSecond = 8,
+		},
 	},
 	FastSlime = {
 		DisplayName = "Fast Slime",
@@ -18,8 +25,15 @@ local EnemyDefinitions = {
 		ContactInterval = 0.65,
 		ExperienceReward = 8,
 		Size = Vector3.new(3.2, 3.2, 3.2),
-		SpriteSize = Vector2.new(116, 116),
-		SpriteColor = Color3.fromRGB(150, 220, 255),
+		SpriteSize = Vector2.new(43.5, 43.5),
+		SpriteColor = Color3.fromRGB(255, 255, 255),
+		SpriteSheet = {
+			Image = "rbxassetid://100019459569480",
+			FrameSize = Vector2.new(128, 128),
+			Columns = 8,
+			FrameCount = 8,
+			FramesPerSecond = 8,
+		},
 	},
 	TankSlime = {
 		DisplayName = "Tank Slime",
@@ -29,8 +43,15 @@ local EnemyDefinitions = {
 		ContactInterval = 1.05,
 		ExperienceReward = 22,
 		Size = Vector3.new(5.4, 5.4, 5.4),
-		SpriteSize = Vector2.new(172, 172),
-		SpriteColor = Color3.fromRGB(255, 185, 110),
+		SpriteSize = Vector2.new(64.5, 64.5),
+		SpriteColor = Color3.fromRGB(255, 255, 255),
+		SpriteSheet = {
+			Image = "rbxassetid://117779663836854",
+			FrameSize = Vector2.new(128, 128),
+			Columns = 8,
+			FrameCount = 8,
+			FramesPerSecond = 8,
+		},
 	},
 }
 

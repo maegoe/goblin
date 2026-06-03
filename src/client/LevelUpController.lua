@@ -63,6 +63,14 @@ local function getChoiceIconAsset(choice)
 	return growthIcons and assetKey and growthIcons[assetKey] or nil
 end
 
+local function addTextSizeConstraint(label, minSize, maxSize)
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MinTextSize = minSize
+	constraint.MaxTextSize = maxSize
+	constraint.Parent = label
+	return constraint
+end
+
 local function useVerticalChoices()
 	local camera = workspace.CurrentCamera
 	local viewport = camera and camera.ViewportSize or Vector2.new(1024, 768)
@@ -88,6 +96,16 @@ local function applyChoiceLayout()
 
 		for _, button in ipairs(buttons) do
 			button.Size = UDim2.new(1, 0, 0.31, -8)
+			local icon = button:FindFirstChild("Icon")
+			local name = button:FindFirstChild("ChoiceName")
+			if icon then
+				icon.Size = UDim2.fromScale(0.22, 0.56)
+				icon.Position = UDim2.fromScale(0.06, 0.16)
+			end
+			if name then
+				name.Size = UDim2.fromScale(0.56, 0.18)
+				name.Position = UDim2.fromScale(0.36, 0.32)
+			end
 		end
 	else
 		if titleLabel then
@@ -102,6 +120,16 @@ local function applyChoiceLayout()
 
 		for _, button in ipairs(buttons) do
 			button.Size = UDim2.new(0.32, -8, 1, 0)
+			local icon = button:FindFirstChild("Icon")
+			local name = button:FindFirstChild("ChoiceName")
+			if icon then
+				icon.Size = UDim2.fromScale(0.32, 0.32)
+				icon.Position = UDim2.fromScale(0.08, 0.12)
+			end
+			if name then
+				name.Size = UDim2.fromScale(0.84, 0.14)
+				name.Position = UDim2.fromScale(0.08, 0.46)
+			end
 		end
 	end
 end
@@ -131,13 +159,25 @@ local function createButton(parent, index)
 	icon.Name = "Icon"
 	icon.BackgroundColor3 = Color3.fromRGB(22, 26, 32)
 	icon.BorderSizePixel = 0
-	icon.Size = UDim2.fromScale(0.28, 0.32)
+	icon.Size = UDim2.fromScale(0.32, 0.32)
 	icon.Position = UDim2.fromScale(0.08, 0.12)
 	icon.Parent = button
 
 	local iconCorner = Instance.new("UICorner")
 	iconCorner.CornerRadius = UDim.new(0, 8)
 	iconCorner.Parent = icon
+
+	local iconAspect = Instance.new("UIAspectRatioConstraint")
+	iconAspect.AspectRatio = 1
+	iconAspect.DominantAxis = Enum.DominantAxis.Width
+	iconAspect.Parent = icon
+
+	local iconStroke = Instance.new("UIStroke")
+	iconStroke.Name = "RarityStroke"
+	iconStroke.Color = Color3.fromRGB(94, 104, 124)
+	iconStroke.Thickness = 2
+	iconStroke.Transparency = 0.05
+	iconStroke.Parent = icon
 
 	local iconImage = Instance.new("ImageLabel")
 	iconImage.Name = "IconImage"
@@ -161,6 +201,7 @@ local function createButton(parent, index)
 	iconText.Position = UDim2.fromScale(0.5, 0.5)
 	iconText.AnchorPoint = Vector2.new(0.5, 0.5)
 	iconText.Parent = icon
+	addTextSizeConstraint(iconText, 10, 28)
 
 	local rarity = Instance.new("TextLabel")
 	rarity.Name = "Rarity"
@@ -181,12 +222,13 @@ local function createButton(parent, index)
 	name.Text = ""
 	name.TextColor3 = Color3.fromRGB(255, 255, 255)
 	name.TextScaled = true
-	name.TextWrapped = true
+	name.TextWrapped = false
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.TextYAlignment = Enum.TextYAlignment.Center
-	name.Size = UDim2.fromScale(0.52, 0.28)
-	name.Position = UDim2.fromScale(0.4, 0.29)
+	name.Size = UDim2.fromScale(0.84, 0.14)
+	name.Position = UDim2.fromScale(0.08, 0.46)
 	name.Parent = button
+	addTextSizeConstraint(name, 12, 18)
 
 	local description = Instance.new("TextLabel")
 	description.Name = "Description"
@@ -213,10 +255,14 @@ local function setChoiceButton(button, choice)
 	local description = button:FindFirstChild("Description")
 
 	if icon then
+		local iconStroke = icon:FindFirstChild("RarityStroke")
 		local iconAsset = getChoiceIconAsset(choice)
 		local iconImage = icon:FindFirstChild("IconImage")
 		local iconText = icon:FindFirstChild("IconText")
 
+		if iconStroke and iconStroke:IsA("UIStroke") then
+			iconStroke.Color = rarityColor
+		end
 		if iconImage then
 			iconImage.Image = iconAsset or ""
 			iconImage.Visible = iconAsset ~= nil

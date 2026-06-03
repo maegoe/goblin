@@ -19,6 +19,76 @@ local projectileFolder
 local attackTimers = {}
 local projectiles = {}
 
+local function setExplosionSpriteFrame(sprite, spriteConfig, frameIndex)
+	local frameSize = spriteConfig.FrameSize
+	local columns = spriteConfig.Columns or spriteConfig.FrameCount or 1
+	local column = frameIndex % columns
+	local row = math.floor(frameIndex / columns)
+
+	sprite.ImageRectSize = frameSize
+	sprite.ImageRectOffset = Vector2.new(frameSize.X * column, frameSize.Y * row)
+end
+
+local function playExplosionSprite(sprite, spriteConfig, duration)
+	local frameCount = spriteConfig.FrameCount or 1
+	local startedAt = os.clock()
+
+	setExplosionSpriteFrame(sprite, spriteConfig, 0)
+	task.spawn(function()
+		while sprite.Parent do
+			local progress = 1
+			if duration > 0 then
+				progress = math.clamp((os.clock() - startedAt) / duration, 0, 1)
+			end
+
+			local frameIndex = math.min(frameCount - 1, math.floor(progress * frameCount))
+			setExplosionSpriteFrame(sprite, spriteConfig, frameIndex)
+
+			if progress >= 1 then
+				break
+			end
+
+			RunService.Heartbeat:Wait()
+		end
+	end)
+end
+
+local function createExplosionSpriteSurface(feedback, spriteConfig)
+	if not spriteConfig or not spriteConfig.Image or not spriteConfig.FrameSize then
+		return nil
+	end
+
+	local surface = Instance.new("SurfaceGui")
+	surface.Name = "ExplosionSpriteSurface"
+	surface.Face = Enum.NormalId.Top
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.PixelsPerStud = 32
+	surface.Parent = feedback
+
+	local sprite = Instance.new("ImageLabel")
+	sprite.Name = "ExplosionSprite"
+	sprite.BackgroundTransparency = 1
+	sprite.Image = spriteConfig.Image
+	sprite.ImageTransparency = 0.05
+	sprite.ScaleType = Enum.ScaleType.Fit
+	sprite.Size = UDim2.fromScale(1, 1)
+	sprite.Parent = surface
+	setExplosionSpriteFrame(sprite, spriteConfig, 0)
+
+	return sprite
+end
+
+local function createExplosionImageFallback(feedback)
+	local decal = Instance.new("Decal")
+	decal.Name = "ExplosionImage"
+	decal.Face = Enum.NormalId.Top
+	decal.Texture = WeaponDefinitions.BasicBolt.ExplosionFeedbackImage
+	decal.Transparency = 0.05
+	decal.Parent = feedback
+
+	return decal
+end
+
 local function getProjectileFolder()
 	if projectileFolder then
 		return projectileFolder
@@ -48,12 +118,11 @@ local function createExplosionFeedback(position, radius)
 	feedback.Position = position + Vector3.new(0, 0.15, 0)
 	feedback.Parent = getProjectileFolder()
 
-	local decal = Instance.new("Decal")
-	decal.Name = "ExplosionImage"
-	decal.Face = Enum.NormalId.Top
-	decal.Texture = WeaponDefinitions.BasicBolt.ExplosionFeedbackImage
-	decal.Transparency = 0.05
-	decal.Parent = feedback
+	local sprite = createExplosionSpriteSurface(feedback, WeaponDefinitions.BasicBolt.ExplosionFeedbackSprite)
+	local fallbackDecal = nil
+	if not sprite then
+		fallbackDecal = createExplosionImageFallback(feedback)
+	end
 
 	local duration = WeaponDefinitions.BasicBolt.ExplosionFeedbackDuration
 	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -61,9 +130,16 @@ local function createExplosionFeedback(position, radius)
 		Size = Vector3.new(radius * 2, 0.1, radius * 2),
 		Transparency = 1,
 	}):Play()
-	TweenService:Create(decal, tweenInfo, {
-		Transparency = 1,
-	}):Play()
+	if sprite then
+		playExplosionSprite(sprite, WeaponDefinitions.BasicBolt.ExplosionFeedbackSprite, duration)
+		TweenService:Create(sprite, tweenInfo, {
+			ImageTransparency = 1,
+		}):Play()
+	else
+		TweenService:Create(fallbackDecal, tweenInfo, {
+			Transparency = 1,
+		}):Play()
+	end
 
 	Debris:AddItem(feedback, duration + 0.1)
 end

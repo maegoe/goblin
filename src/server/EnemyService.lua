@@ -16,17 +16,45 @@ local EnemyService = {}
 local enemies = {}
 local enemyFolder
 local enemyAssets = Assets.v0_4.ingame_2d
-local BASIC_MONSTER_SPRITE_SIZE = Vector2.new(136, 136)
+local BASIC_MONSTER_SPRITE_SIZE = Vector2.new(51, 51)
 local DEFAULT_SPRITE_COLOR = Color3.fromRGB(255, 255, 255)
 local DAMAGE_NUMBER_LIFETIME = 0.65
 local DAMAGE_NUMBER_RISE = 2.5
 local DAMAGE_NUMBER_FOLDER_NAME = "DamageNumbers"
+local DEFAULT_SPRITE_SHEET_FPS = 8
 
 local function getSpriteRotationForFlatDirection(direction)
 	return math.deg(math.atan2(direction.X, -direction.Z)) + 180
 end
 
-local function createSpriteBillboard(parent, image, size, color)
+local function setSpriteSheetFrame(sprite, spriteSheet, frameIndex)
+	local frameSize = spriteSheet.FrameSize
+	local columns = spriteSheet.Columns or spriteSheet.FrameCount or 1
+	local column = frameIndex % columns
+	local row = math.floor(frameIndex / columns)
+
+	sprite.ImageRectSize = frameSize
+	sprite.ImageRectOffset = Vector2.new(frameSize.X * column, frameSize.Y * row)
+end
+
+local function animateSpriteSheet(data, now)
+	local spriteSheet = data.SpriteSheet
+	if not data.Sprite or not spriteSheet or not spriteSheet.FrameSize then
+		return
+	end
+
+	local frameCount = spriteSheet.FrameCount or 1
+	local framesPerSecond = spriteSheet.FramesPerSecond or DEFAULT_SPRITE_SHEET_FPS
+	local frameIndex = math.floor((now - data.SpawnedAt) * framesPerSecond) % frameCount
+	if data.CurrentSpriteFrame == frameIndex then
+		return
+	end
+
+	data.CurrentSpriteFrame = frameIndex
+	setSpriteSheetFrame(data.Sprite, spriteSheet, frameIndex)
+end
+
+local function createSpriteBillboard(parent, image, size, color, spriteSheet)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "CombatSprite"
 	billboard.Adornee = parent
@@ -44,6 +72,9 @@ local function createSpriteBillboard(parent, image, size, color)
 	sprite.ImageColor3 = color
 	sprite.ScaleType = Enum.ScaleType.Fit
 	sprite.Size = UDim2.fromScale(1, 1)
+	if spriteSheet and spriteSheet.FrameSize then
+		setSpriteSheetFrame(sprite, spriteSheet, 0)
+	end
 	sprite.Parent = billboard
 
 	return sprite
@@ -184,11 +215,16 @@ function EnemyService.spawn(enemyType, position)
 	enemy.Parent = getEnemyFolder()
 	local spriteSize = definition.SpriteSize or BASIC_MONSTER_SPRITE_SIZE
 	local spriteColor = definition.SpriteColor or DEFAULT_SPRITE_COLOR
-	local sprite = createSpriteBillboard(enemy, enemyAssets.combat_monster_default_512x512, spriteSize, spriteColor)
+	local spriteSheet = definition.SpriteSheet
+	local spriteImage = spriteSheet and spriteSheet.Image or enemyAssets.combat_monster_default_512x512
+	local sprite = createSpriteBillboard(enemy, spriteImage, spriteSize, spriteColor, spriteSheet)
 
 	enemies[enemy] = {
 		Instance = enemy,
 		Sprite = sprite,
+		SpriteSheet = spriteSheet,
+		SpawnedAt = os.clock(),
+		CurrentSpriteFrame = 0,
 		Type = enemyType,
 		Health = definition.MaxHealth,
 		MaxHealth = definition.MaxHealth,
@@ -291,6 +327,7 @@ function EnemyService.start()
 			if data.Sprite and flatDirection.Magnitude > 0 then
 				data.Sprite.Rotation = getSpriteRotationForFlatDirection(flatDirection)
 			end
+			animateSpriteSheet(data, now)
 
 			if distance > 3.5 then
 				if flatDirection.Magnitude > 0 then

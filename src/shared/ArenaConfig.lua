@@ -5,6 +5,9 @@ local ArenaConfig = {
 	BoundaryThickness = 2,
 	SpawnMargin = 10,
 	EnemyMovementMargin = 3,
+	FloorTileTexture = "rbxassetid://89096359055479",
+	FloorTileStuds = Vector2.new(32, 32),
+	FloorTileDebugLogging = true,
 }
 
 function ArenaConfig.getHalfExtents()
