@@ -23,8 +23,13 @@ local DAMAGE_NUMBER_RISE = 2.5
 local DAMAGE_NUMBER_FOLDER_NAME = "DamageNumbers"
 local DEFAULT_SPRITE_SHEET_FPS = 8
 
-local function getSpriteRotationForFlatDirection(direction)
-	return math.deg(math.atan2(direction.X, -direction.Z)) + 180
+local function getCollisionRadius(definition)
+	if definition.CollisionRadius then
+		return definition.CollisionRadius
+	end
+
+	local size = definition.Size
+	return math.max(size.X, size.Z) * 0.5
 end
 
 local function setSpriteSheetFrame(sprite, spriteSheet, frameIndex)
@@ -177,6 +182,37 @@ local function getNearestPlayer(position)
 	return nearestPlayer, nearestDistance
 end
 
+local function getHorizontalDirection(fromPosition, toPosition)
+	local direction = fromPosition - toPosition
+	local flatDirection = Vector3.new(direction.X, 0, direction.Z)
+	if flatDirection.Magnitude > 0.001 then
+		return flatDirection.Unit
+	end
+
+	return Vector3.new(1, 0, 0)
+end
+
+local function separateFromOtherEnemies(enemy, data, desiredPosition)
+	local separatedPosition = desiredPosition
+
+	for otherEnemy, otherData in pairs(enemies) do
+		if otherEnemy ~= enemy and otherEnemy.Parent and otherData.Health > 0 then
+			local minDistance = data.CollisionRadius + otherData.CollisionRadius
+			local offset = separatedPosition - otherEnemy.Position
+			local flatOffset = Vector3.new(offset.X, 0, offset.Z)
+			local distance = flatOffset.Magnitude
+
+			if distance < minDistance then
+				local pushDirection = getHorizontalDirection(separatedPosition, otherEnemy.Position)
+				local pushDistance = minDistance - distance
+				separatedPosition += pushDirection * pushDistance
+			end
+		end
+	end
+
+	return ArenaConfig.clampToArena(separatedPosition, ArenaConfig.EnemyMovementMargin)
+end
+
 function EnemyService.count()
 	local total = 0
 	for _ in pairs(enemies) do
@@ -229,6 +265,7 @@ function EnemyService.spawn(enemyType, position)
 		Health = definition.MaxHealth,
 		MaxHealth = definition.MaxHealth,
 		MoveSpeed = definition.MoveSpeed,
+		CollisionRadius = getCollisionRadius(definition),
 		ContactDamage = definition.ContactDamage,
 		ContactInterval = definition.ContactInterval,
 		ExperienceReward = definition.ExperienceReward,
@@ -312,6 +349,8 @@ function EnemyService.start()
 				continue
 			end
 
+			enemy.Position = separateFromOtherEnemies(enemy, data, enemy.Position)
+
 			local targetPlayer, distance = getNearestPlayer(enemy.Position)
 			if not targetPlayer then
 				continue
@@ -324,15 +363,12 @@ function EnemyService.start()
 
 			local direction = root.Position - enemy.Position
 			local flatDirection = Vector3.new(direction.X, 0, direction.Z)
-			if data.Sprite and flatDirection.Magnitude > 0 then
-				data.Sprite.Rotation = getSpriteRotationForFlatDirection(flatDirection)
-			end
 			animateSpriteSheet(data, now)
 
 			if distance > 3.5 then
 				if flatDirection.Magnitude > 0 then
 					local nextPosition = enemy.Position + (flatDirection.Unit * data.MoveSpeed * deltaTime)
-					enemy.Position = ArenaConfig.clampToArena(nextPosition, ArenaConfig.EnemyMovementMargin)
+					enemy.Position = separateFromOtherEnemies(enemy, data, nextPosition)
 				end
 			else
 				local lastContact = data.LastContactAt[targetPlayer] or 0
