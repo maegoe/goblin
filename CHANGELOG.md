@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-05
+
+### Changed
+
+- KAN-91: Added V1.0 hotfix enemy movement behavior so BasicSlime, FastSlime, and TankSlime no longer rotate their combat sprites toward the player while pursuing.
+- KAN-91: Added type-specific enemy collision radii and server-side enemy-to-enemy separation during pursuit so enemies avoid fully overlapping while preserving existing stats, spawn rules, rewards, sprite assets, contact damage, and arena clamps.
+
+### Validation
+
+- KAN-91 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for visual rotation lock, enemy-to-enemy collision/spacing, and contact damage regression.
+- KAN-91 Studio runtime QA passed by user verification: unit sprite rotation lock and unit-to-unit collision behavior work as intended.
+
 ## 2026-06-03
 
 ### Added
