@@ -2,6 +2,10 @@
 
 ## 2026-06-05
 
+### Added
+
+- KAN-90: Set the V1.0 mobile screen orientation to `LandscapeSensor` through `StarterGui` project configuration and a client startup orientation controller that keeps the current player's `PlayerGui.ScreenOrientation` in landscape-only mode.
+
 ### Changed
 
 - KAN-91: Added V1.0 hotfix enemy movement behavior so BasicSlime, FastSlime, and TankSlime no longer rotate their combat sprites toward the player while pursuing.
@@ -9,6 +13,7 @@
 
 ### Validation
 
+- KAN-90 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio Device Emulator or physical mobile QA should confirm portrait mode is blocked and the lobby, combat HUD, level-up UI, and result UI remain readable in landscape.
 - KAN-91 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for visual rotation lock, enemy-to-enemy collision/spacing, and contact damage regression.
 - KAN-91 Studio runtime QA passed by user verification: unit sprite rotation lock and unit-to-unit collision behavior work as intended.
 
