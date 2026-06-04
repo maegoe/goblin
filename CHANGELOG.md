@@ -13,7 +13,8 @@
 
 ### Validation
 
-- KAN-90 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio Device Emulator or physical mobile QA should confirm portrait mode is blocked and the lobby, combat HUD, level-up UI, and result UI remain readable in landscape.
+- KAN-90 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only.
+- KAN-90 Studio/mobile QA passed by user verification: mobile landscape-only orientation works as intended, so portrait mode is blocked for V1.0 mobile play.
 - KAN-91 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for visual rotation lock, enemy-to-enemy collision/spacing, and contact damage regression.
 - KAN-91 Studio runtime QA passed by user verification: unit sprite rotation lock and unit-to-unit collision behavior work as intended.
 
