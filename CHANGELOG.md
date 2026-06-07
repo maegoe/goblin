@@ -1,30 +1,36 @@
 # Changelog
 
-## 2026-06-07
+## 2026-06-06
 
 ### Changed
 
-- KAN-92: Removed the health-ratio enemy sprite fade so damaged combat units remain fully opaque during V1.0 runs.
-- KAN-93: Increased the TankSlime/orc display sprite size from 64.5x64.5 to 84x84, roughly a 1.3x visual scale, without changing collision radius, HP, movement, damage, rewards, spawn rules, or asset ids.
-- KAN-94: Locked player movement while level-up choices are pending by setting server-side Humanoid WalkSpeed to 0 and restoring the normal run movement speed after the selected upgrade is applied.
-- KAN-87/KAN-88 hotfix: Re-applied the corrected transparent player goblin sprite sheet asset ids from KAN-87 comment 10902 after confirming the prior asset replacement commit was not included in the current hotfix branch.
+- KAN-87: Recorded completion of the V1.0 unit/tile/goblin sprite sheet asset handoff after the corrected transparent goblin assets and previously delivered enemy/tile assets were accepted.
+- KAN-88: Recorded completion of the V1.0 unit/effect/tile runtime sprite integration after successful Studio visual/runtime QA.
 
 ### Validation
 
-- KAN-92/KAN-93/KAN-94 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for enemy opacity, orc visual scale, and movement lock/recovery while choosing upgrades.
-- KAN-87/KAN-88 goblin sprite hotfix static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio visual QA should confirm the player goblin idle/walk-left/walk-right sheets render without the chroma-key background.
+- KAN-87/KAN-88 QA passed by user verification: corrected transparent player goblin sprites, enemy sprite sheets, attack explosion VFX, and arena floor tile runtime visuals are accepted for the KAN-88 scope.
+- KAN-81 QA passed by user verification: PC/mobile level-up choice UI readability, horizontal choice-card layout, growth icon/fallback display, choice selection, growth effect application, and combat resume flow are accepted for the V1.0 hotfix scope.
 
 ## 2026-06-05
+
+### Added
+
+- KAN-90: Set the V1.0 mobile screen orientation to `LandscapeSensor` through `StarterGui` project configuration and a client startup orientation controller that keeps the current player's `PlayerGui.ScreenOrientation` in landscape-only mode.
 
 ### Changed
 
 - KAN-91: Added V1.0 hotfix enemy movement behavior so BasicSlime, FastSlime, and TankSlime no longer rotate their combat sprites toward the player while pursuing.
 - KAN-91: Added type-specific enemy collision radii and server-side enemy-to-enemy separation during pursuit so enemies avoid fully overlapping while preserving existing stats, spawn rules, rewards, sprite assets, contact damage, and arena clamps.
+- KAN-88/KAN-87 follow-up: Updated the in-arena player goblin idle, walk-left, and walk-right sprite sheet runtime assets to the corrected transparent KAN-87 comment 10902 handoff ids `rbxassetid://118274519536442`, `rbxassetid://139275661229908`, and `rbxassetid://90889400666043`, preserving the existing 1024x128 8-frame metadata, input-state behavior, player sprite size, and fallback path.
 
 ### Validation
 
+- KAN-90 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only.
+- KAN-90 Studio/mobile QA passed by user verification: mobile landscape-only orientation works as intended, so portrait mode is blocked for V1.0 mobile play.
 - KAN-91 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for visual rotation lock, enemy-to-enemy collision/spacing, and contact damage regression.
 - KAN-91 Studio runtime QA passed by user verification: unit sprite rotation lock and unit-to-unit collision behavior work as intended.
+- KAN-88/KAN-87 corrected player goblin asset static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio visual/runtime QA should confirm the corrected transparent idle/walk-left/walk-right sheets render without chroma-key background.
 
 ## 2026-06-03
 
