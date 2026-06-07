@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-07
+
+### Changed
+
+- KAN-92: Removed the health-ratio enemy sprite fade so damaged combat units remain fully opaque during V1.0 runs.
+- KAN-93: Increased the TankSlime/orc display sprite size from 64.5x64.5 to 84x84, roughly a 1.3x visual scale, without changing collision radius, HP, movement, damage, rewards, spawn rules, or asset ids.
+- KAN-94: Locked player movement while level-up choices are pending by setting server-side Humanoid WalkSpeed to 0 and restoring the normal run movement speed after the selected upgrade is applied.
+
+### Validation
+
+- KAN-92/KAN-93/KAN-94 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. Studio runtime QA remains pending for enemy opacity, orc visual scale, and movement lock/recovery while choosing upgrades.
+
 ## 2026-06-05
 
 ### Changed

@@ -75,6 +75,7 @@ local function createSpriteBillboard(parent, image, size, color, spriteSheet)
 	sprite.BackgroundTransparency = 1
 	sprite.Image = image
 	sprite.ImageColor3 = color
+	sprite.ImageTransparency = 0
 	sprite.ScaleType = Enum.ScaleType.Fit
 	sprite.Size = UDim2.fromScale(1, 1)
 	if spriteSheet and spriteSheet.FrameSize then
@@ -325,9 +326,8 @@ function EnemyService.damage(enemy, amount)
 		}
 	end
 
-	local scale = math.clamp(data.Health / data.MaxHealth, 0.25, 1)
 	if data.Sprite then
-		data.Sprite.ImageTransparency = 1 - scale
+		data.Sprite.ImageTransparency = 0
 	end
 
 	return nil
