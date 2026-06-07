@@ -84,13 +84,13 @@ Create GitHub Environments named `production` and `development`.
 
 For `production`, add these values:
 
-- Secret: `ROBLOX_API_KEY`
+- Secret: `ROBLOX_OPEN_CLOUD_API_KEY`
 - Variable: `ROBLOX_UNIVERSE_ID`
 - Variable: `ROBLOX_PLACE_ID`
 
 For `development`, add these values:
 
-- Secret: `ROBLOX_API_KEY`
+- Secret: `ROBLOX_OPEN_CLOUD_API_KEY`
 - Variable: `ROBLOX_UNIVERSE_ID`
 - Variable: `ROBLOX_DEV_PLACE_ID`
 
@@ -107,7 +107,9 @@ Development place setup:
 
 - `ROBLOX_DEV_PLACE_ID` must point to a separate non-production place in the same target universe.
 - Roblox Open Cloud Place Publishing publishes a new version to an existing place with `POST /universes/v1/{universeId}/places/{placeId}/versions`.
-- The current Roblox Cloud reference documents `Get Place`, `Update Place`, and `Create Place Version`, but does not expose a documented API-key endpoint for creating a brand-new place. Create the development place in Roblox Studio or Creator Dashboard, then store its place id as `ROBLOX_DEV_PLACE_ID`.
+- A development place can be created by running `AssetService:CreatePlaceAsync(placeName, templatePlaceId, description)` through Open Cloud Luau Execution against an existing place in the universe.
+- The Open Cloud key used for creation must include Luau Execution write permission for the universe/place, such as `universe.place.luau-execution-session:write`, in addition to `universe-places` `Write` for deployment.
+- After the place is created, store the new place id as `ROBLOX_DEV_PLACE_ID`.
 
 ## Deployment flow
 

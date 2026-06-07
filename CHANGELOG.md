@@ -7,10 +7,12 @@
 - KAN-68: Extended GitHub Actions deployment so pushes to `dev` build with Rojo and publish to a separate development place through Roblox Open Cloud, while `main` continues to target the production place.
 - KAN-68: Documented the required `development` GitHub Environment variables, including `ROBLOX_DEV_PLACE_ID`, and noted that current official Open Cloud place publishing updates existing places rather than creating new places.
 - KAN-68: Switched GitHub Actions Rokit installation to `rokit install --no-trust-check` so CI can install trusted project tools non-interactively.
+- KAN-68: Renamed the deployment secret expected by GitHub Actions to `ROBLOX_OPEN_CLOUD_API_KEY` and documented Luau Execution requirements for creating a development validation place with `AssetService:CreatePlaceAsync`.
 
 ### Validation
 
 - KAN-68 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. First GitHub Actions dev deploy run reached `rokit install` and failed on the Asphalt trust prompt; workflow was updated to use CI non-interactive Rokit install. GitHub Actions deployment verification remains pending until the rerun completes and `ROBLOX_DEV_PLACE_ID` is configured.
+- KAN-68 Open Cloud validation place creation blocked: `develop.roblox.com/v1/universes/{universeId}/places` found template place `Goblin` (`127824265746134`), but Luau Execution `CreatePlaceAsync` returned `PERMISSION_DENIED` because the Open Cloud key is missing `universe.place.luau-execution-session:write`. Deployment to the new validation place remains pending until the key scope is added and the generated place id is stored as `ROBLOX_DEV_PLACE_ID`.
 
 ## 2026-06-06
 
