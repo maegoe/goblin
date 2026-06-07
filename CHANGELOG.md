@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-07
+
+### Changed
+
+- KAN-68: Extended GitHub Actions deployment so pushes to `dev` build with Rojo and publish to a separate development place through Roblox Open Cloud, while `main` continues to target the production place.
+- KAN-68: Documented the required `development` GitHub Environment variables, including `ROBLOX_DEV_PLACE_ID`, and noted that current official Open Cloud place publishing updates existing places rather than creating new places.
+
+### Validation
+
+- KAN-68 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. GitHub Actions deployment verification remains pending until `ROBLOX_DEV_PLACE_ID` is configured and `dev` is pushed.
+
 ## 2026-06-06
 
 ### Changed

@@ -4,11 +4,16 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    env:
+      ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
+      ROBLOX_PLACE_ID: ${{ github.ref_name == 'main' && vars.ROBLOX_PLACE_ID || vars.ROBLOX_DEV_PLACE_ID }}
 
     steps:
       - name: Check out repository
@@ -26,15 +31,12 @@ jobs:
 
       - name: Validate deployment configuration
         shell: bash
-        env:
-          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
         run: |
           set -euo pipefail
           test -n "$ROBLOX_API_KEY" || { echo "Missing ROBLOX_API_KEY secret"; exit 1; }
           test -n "$ROBLOX_UNIVERSE_ID" || { echo "Missing ROBLOX_UNIVERSE_ID variable"; exit 1; }
           test -n "$ROBLOX_PLACE_ID" || { echo "Missing ROBLOX_PLACE_ID variable"; exit 1; }
+          echo "Deploying ${GITHUB_REF_NAME} to universe ${ROBLOX_UNIVERSE_ID}, place ${ROBLOX_PLACE_ID}"
 
       - name: Build place
         shell: bash
@@ -44,10 +46,6 @@ jobs:
 
       - name: Publish to Roblox
         shell: bash
-        env:
-          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
         run: |
           set -euo pipefail
 
