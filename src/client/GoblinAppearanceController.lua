@@ -20,13 +20,13 @@ local PLAYER_SPRITE_FRAME_COUNT = 8
 local PLAYER_SPRITE_FPS = 10
 local PLAYER_SPRITES = {
 	idle = {
-		Image = "rbxassetid://140505632811918",
+		Image = "rbxassetid://118274519536442",
 	},
 	walkLeft = {
-		Image = "rbxassetid://76050605441660",
+		Image = "rbxassetid://139275661229908",
 	},
 	walkRight = {
-		Image = "rbxassetid://85442378314552",
+		Image = "rbxassetid://90889400666043",
 	},
 }
 local DIRECTION_KEY_BY_KEY_CODE = {
