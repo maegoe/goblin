@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     env:
-      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
-      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-      ROBLOX_PLACE_ID: ${{ github.ref_name == 'main' && vars.ROBLOX_PLACE_ID || vars.ROBLOX_DEV_PLACE_ID }}
+      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY || secrets.ROBLOX_API_KEY }}
+      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID || secrets.ROBLOX_UNIVERSE_ID }}
+      ROBLOX_PLACE_ID: ${{ github.ref_name == 'main' && (vars.ROBLOX_PLACE_ID || secrets.ROBLOX_PLACE_ID) || (vars.ROBLOX_DEV_PLACE_ID || secrets.ROBLOX_DEV_PLACE_ID) }}
 
     steps:
       - name: Check out repository
