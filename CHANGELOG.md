@@ -11,8 +11,9 @@
 
 ### Validation
 
-- KAN-68 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only. First GitHub Actions dev deploy run reached `rokit install` and failed on the Asphalt trust prompt; workflow was updated to use CI non-interactive Rokit install. GitHub Actions deployment verification remains pending until the rerun completes and `ROBLOX_DEV_PLACE_ID` is configured.
-- KAN-68 Open Cloud validation place creation blocked: `develop.roblox.com/v1/universes/{universeId}/places` found template place `Goblin` (`127824265746134`), but Luau Execution `CreatePlaceAsync` returned `PERMISSION_DENIED` because the Open Cloud key is missing `universe.place.luau-execution-session:write`. Deployment to the new validation place remains pending until the key scope is added and the generated place id is stored as `ROBLOX_DEV_PLACE_ID`.
+- KAN-68 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only.
+- KAN-68 Open Cloud validation place creation passed: Luau Execution `AssetService:CreatePlaceAsync("Goblin Develop Verification", 127824265746134, ...)` created development validation place `99922439308375`, and local Open Cloud Place Publishing posted `build\game.rbxl` to published version `2`.
+- KAN-68 GitHub Actions e2e deployment passed: rerun `27080749380` attempt 2 injected `ROBLOX_OPEN_CLOUD_API_KEY`, `ROBLOX_UNIVERSE_ID=10140717148`, and `ROBLOX_PLACE_ID=99922439308375`, built with Rojo, and published to Roblox with response `{"versionNumber":2}`.
 
 ## 2026-06-06
 
