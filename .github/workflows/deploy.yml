@@ -4,11 +4,16 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    env:
+      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY || secrets.ROBLOX_API_KEY }}
+      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID || secrets.ROBLOX_UNIVERSE_ID }}
+      ROBLOX_PLACE_ID: ${{ github.ref_name == 'main' && (vars.ROBLOX_PLACE_ID || secrets.ROBLOX_PLACE_ID) || (vars.ROBLOX_DEV_PLACE_ID || secrets.ROBLOX_DEV_PLACE_ID) }}
 
     steps:
       - name: Check out repository
@@ -22,19 +27,16 @@ jobs:
 
       - name: Install project tools
         shell: bash
-        run: rokit install
+        run: rokit install --no-trust-check
 
       - name: Validate deployment configuration
         shell: bash
-        env:
-          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
         run: |
           set -euo pipefail
-          test -n "$ROBLOX_API_KEY" || { echo "Missing ROBLOX_API_KEY secret"; exit 1; }
+          test -n "$ROBLOX_OPEN_CLOUD_API_KEY" || { echo "Missing ROBLOX_OPEN_CLOUD_API_KEY secret"; exit 1; }
           test -n "$ROBLOX_UNIVERSE_ID" || { echo "Missing ROBLOX_UNIVERSE_ID variable"; exit 1; }
           test -n "$ROBLOX_PLACE_ID" || { echo "Missing ROBLOX_PLACE_ID variable"; exit 1; }
+          echo "Deploying ${GITHUB_REF_NAME} to universe ${ROBLOX_UNIVERSE_ID}, place ${ROBLOX_PLACE_ID}"
 
       - name: Build place
         shell: bash
@@ -44,10 +46,6 @@ jobs:
 
       - name: Publish to Roblox
         shell: bash
-        env:
-          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
         run: |
           set -euo pipefail
 
@@ -56,7 +54,7 @@ jobs:
           curl --fail-with-body --show-error --silent \
             --request POST \
             --url "https://apis.roblox.com/universes/v1/${ROBLOX_UNIVERSE_ID}/places/${ROBLOX_PLACE_ID}/versions?versionType=Published" \
-            --header "x-api-key: ${ROBLOX_API_KEY}" \
+            --header "x-api-key: ${ROBLOX_OPEN_CLOUD_API_KEY}" \
             --header "Content-Type: application/octet-stream" \
             --data-binary @build/game.rbxl \
             > "$response_file"

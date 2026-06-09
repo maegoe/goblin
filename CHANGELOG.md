@@ -25,6 +25,20 @@
 ### Validation
 
 - KAN-56 completion is based on user confirmation. No code, Roblox asset, Tarmac, or Studio QA change was required for this process-only backlog item.
+## 2026-06-07
+
+### Changed
+
+- KAN-68: Extended GitHub Actions deployment so pushes to `dev` build with Rojo and publish to a separate development place through Roblox Open Cloud, while `main` continues to target the production place.
+- KAN-68: Documented the required `development` GitHub Environment variables, including `ROBLOX_DEV_PLACE_ID`, and noted that current official Open Cloud place publishing updates existing places rather than creating new places.
+- KAN-68: Switched GitHub Actions Rokit installation to `rokit install --no-trust-check` so CI can install trusted project tools non-interactively.
+- KAN-68: Renamed the deployment secret expected by GitHub Actions to `ROBLOX_OPEN_CLOUD_API_KEY` and documented Luau Execution requirements for creating a development validation place with `AssetService:CreatePlaceAsync`.
+
+### Validation
+
+- KAN-68 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with existing LF-to-CRLF working-copy warnings only.
+- KAN-68 Open Cloud validation place creation passed: Luau Execution `AssetService:CreatePlaceAsync("Goblin Develop Verification", 127824265746134, ...)` created development validation place `99922439308375`, and local Open Cloud Place Publishing posted `build\game.rbxl` to published version `2`.
+- KAN-68 GitHub Actions e2e deployment passed: rerun `27080749380` attempt 2 injected `ROBLOX_OPEN_CLOUD_API_KEY`, `ROBLOX_UNIVERSE_ID=10140717148`, and `ROBLOX_PLACE_ID=99922439308375`, built with Rojo, and published to Roblox with response `{"versionNumber":2}`.
 
 ## 2026-06-06
 
