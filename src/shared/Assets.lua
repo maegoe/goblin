@@ -47,5 +47,8 @@ return {
 			icon_growth_speed_128x128 = "rbxassetid://139558625302967",
 			icon_growth_utility_128x128 = "rbxassetid://73176570793771",
 		},
+		hud = {
+			goblin_cartoon_hud_256x128_v4 = "rbxassetid://79358805425016",
+		},
 	},
 }

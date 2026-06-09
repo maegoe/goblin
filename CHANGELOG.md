@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-10
+
+### Changed
+
+- KAN-92: Recorded completion of the V1.0 unit opacity hotfix after user confirmation; enemy combat sprites remain opaque after damage.
+- KAN-93: Recorded completion of the V1.0 orc display-size hotfix after user confirmation; TankSlime/orc reads larger while gameplay values remain unchanged.
+- KAN-94: Recorded completion of the V1.0 level-up choice movement-lock hotfix after user confirmation; player movement is blocked while choices are pending and restored after selection.
+- KAN-95: Replaced the in-arena health, XP, and separate level badge HUD with the supplied cartoon HUD image, adding live HP/EXP fill overlays and compact level text while preserving player stat calculations. Follow-up positioned the HUD at the top-right and scaled it smaller for touch/mobile or small viewports; an additional mobile follow-up reduced the mobile HUD scale to one quarter of the previous mobile size.
+- KAN-96: Replaced fixed camp panel/card/slot background images with black Roblox UI box containers and changed persistent upgrade progress bars to numeric level/cost/owned resource text while preserving existing camp actions and asset icons.
+
+### Validation
+
+- KAN-92/KAN-93/KAN-94 completion is based on user confirmation following the prior implementation record for commit `02c4f9f`, prior `rojo build default.project.json -o build\game.rbxl` PASS, and prior `git diff --check` PASS with existing LF-to-CRLF working-copy warnings only.
+- KAN-95 validation passed: uploaded `assets/v1_0/hud/goblin_cartoon_hud_256x128_v4.png` as `rbxassetid://79358805425016`, verified the source PNG as 256x128 ARGB with transparent background samples, `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user Studio visual/runtime QA confirmed completion. The additional mobile scale follow-up also passed `rojo build default.project.json -o build\game.rbxl` and `git diff --check` with existing LF-to-CRLF warnings only.
+- KAN-96 validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with existing LF-to-CRLF working-copy warnings only, and user confirmed completion after the black-box camp UI and numeric upgrade display pass.
+
+## 2026-06-09
+
+### Changed
+
+- KAN-56: Closed the 2D image generation optimization backlog item after resolving the design-process need with an Open Design open-source workflow.
+
+### Validation
+
+- KAN-56 completion is based on user confirmation. No code, Roblox asset, Tarmac, or Studio QA change was required for this process-only backlog item.
+
 ## 2026-06-06
 
 ### Changed

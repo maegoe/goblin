@@ -187,3 +187,8 @@ packable = false
 hash = "63a4dba8129a4774130df1dcef143940241f3643aa4ddf672d6e41cc14d411d0"
 id = 73176570793771
 packable = false
+
+[inputs."assets/v1_0/hud/goblin_cartoon_hud_256x128_v4.png"]
+hash = "4239a12592c2537e39abda5124e99fc3ec462edcdfc95e9c42175b760acc7b7e"
+id = 79358805425016
+packable = false

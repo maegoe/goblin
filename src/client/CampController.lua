@@ -21,14 +21,13 @@ local runReadinessText
 local campActionStatusText
 local healthUpgradeText
 local healthCostText
-local healthProgressFill
 local healthMaxBadge
 local attackUpgradeText
 local attackCostText
-local attackProgressFill
 local attackMaxBadge
 local artifactText
-local artifactSlotImage
+local artifactSlotBox
+local artifactSlotText
 local appearanceBadge
 local appearanceText
 local campButton
@@ -44,6 +43,8 @@ local TEXT_LIGHT = Color3.fromRGB(247, 244, 226)
 local TEXT_MUTED = Color3.fromRGB(190, 181, 150)
 local TEXT_SUCCESS = Color3.fromRGB(151, 223, 143)
 local TEXT_WARNING = Color3.fromRGB(238, 185, 102)
+local BOX_BACKGROUND = Color3.fromRGB(5, 5, 5)
+local BOX_STROKE = Color3.fromRGB(76, 72, 64)
 
 local function addTextConstraint(label, minSize, maxSize)
 	label.TextScaled = true
@@ -64,6 +65,25 @@ local function createImage(parent, name, image, position, size)
 	item.ScaleType = Enum.ScaleType.Stretch
 	item.Parent = parent
 	return item
+end
+
+local function createPanelBox(parent, name, position, size, transparency)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.BackgroundColor3 = BOX_BACKGROUND
+	frame.BackgroundTransparency = transparency or 0.12
+	frame.BorderSizePixel = 0
+	frame.Position = position
+	frame.Size = size
+	frame.Parent = parent
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE
+	stroke.Thickness = 1
+	stroke.Transparency = 0.28
+	stroke.Parent = frame
+
+	return frame
 end
 
 local function createText(parent, name, text, position, size, textSize)
@@ -101,26 +121,6 @@ local function createBadge(parent, name, text, position, size, color)
 	badge.Parent = parent
 	addTextConstraint(badge, 9, 14)
 	return badge
-end
-
-local function createProgress(parent, name, position, size)
-	local track = Instance.new("Frame")
-	track.Name = name
-	track.BackgroundColor3 = Color3.fromRGB(42, 34, 29)
-	track.BackgroundTransparency = 0.08
-	track.BorderSizePixel = 0
-	track.Position = position
-	track.Size = size
-	track.Parent = parent
-
-	local fill = Instance.new("Frame")
-	fill.Name = "Fill"
-	fill.BackgroundColor3 = Color3.fromRGB(206, 142, 67)
-	fill.BorderSizePixel = 0
-	fill.Size = UDim2.fromScale(0, 1)
-	fill.Parent = track
-
-	return fill
 end
 
 local function createImageButton(parent, name, image, position, size, text, maxTextSize)
@@ -228,24 +228,22 @@ local function setArtifactButtonState(button, artifactId, progression)
 	end
 end
 
-local function updateUpgradeCard(upgradeId, level, cost, resourceAmount, textLabel, costLabel, progressFill, button, maxBadge)
+local function updateUpgradeCard(upgradeId, level, cost, resourceAmount, textLabel, costLabel, button, maxBadge)
 	local definition = PersistentUpgradeDefinitions[upgradeId]
 	local maxLevel = definition.MaxLevel
 	local displayName = upgradeId == "MaxHealth" and "Max Health" or "Attack"
-	local ratio = maxLevel > 0 and math.clamp(level / maxLevel, 0, 1) or 0
 
-	textLabel.Text = string.format("%s\nLv %d / %d", displayName, level, maxLevel)
-	progressFill.Size = UDim2.fromScale(ratio, 1)
+	textLabel.Text = string.format("%s\nLevel %d / %d", displayName, level, maxLevel)
 
 	if cost then
 		local canBuy = resourceAmount >= cost
-		costLabel.Text = string.format("Cost %d Growth Stones", cost)
+		costLabel.Text = string.format("Next: %d Growth Stones\nOwned: %d", cost, resourceAmount)
 		costLabel.TextColor3 = canBuy and TEXT_LIGHT or TEXT_WARNING
 		button.Visible = true
 		maxBadge.Visible = false
 		setSecondaryButtonEnabled(button, canBuy, "Buy", "Need Stones")
 	else
-		costLabel.Text = "Complete - 100%"
+		costLabel.Text = string.format("Complete\nLevel %d / %d", level, maxLevel)
 		costLabel.TextColor3 = TEXT_SUCCESS
 		button.Visible = false
 		maxBadge.Visible = true
@@ -277,12 +275,16 @@ local function updateCamp()
 		appearanceBadge.Image = appearanceStage.BadgeAssetId
 	end
 
-	updateUpgradeCard("MaxHealth", healthLevel, healthCost, growthStones, healthUpgradeText, healthCostText, healthProgressFill, healthButton, healthMaxBadge)
-	updateUpgradeCard("AttackDamage", attackLevel, attackCost, growthStones, attackUpgradeText, attackCostText, attackProgressFill, attackButton, attackMaxBadge)
+	updateUpgradeCard("MaxHealth", healthLevel, healthCost, growthStones, healthUpgradeText, healthCostText, healthButton, healthMaxBadge)
+	updateUpgradeCard("AttackDamage", attackLevel, attackCost, growthStones, attackUpgradeText, attackCostText, attackButton, attackMaxBadge)
 
 	artifactText.Text = string.format("Equipped Artifact\n%s", getArtifactDisplayName(progression.EquippedArtifactId))
-	if artifactSlotImage then
-		artifactSlotImage.Image = progression.EquippedArtifactId and campAssets.camp_slot_artifact_equipped_256x256 or campAssets.camp_slot_artifact_empty_256x256
+	if artifactSlotBox then
+		artifactSlotBox.BackgroundColor3 = progression.EquippedArtifactId and Color3.fromRGB(12, 24, 12) or BOX_BACKGROUND
+	end
+	if artifactSlotText then
+		artifactSlotText.Text = progression.EquippedArtifactId and "Equipped" or "Empty"
+		artifactSlotText.TextColor3 = progression.EquippedArtifactId and TEXT_SUCCESS or TEXT_MUTED
 	end
 	setArtifactButtonState(swiftArtifactButton, "SwiftCharm", progression)
 	setArtifactButtonState(blastArtifactButton, "BlastCore", progression)
@@ -354,21 +356,14 @@ local function buildCamp()
 	local background = createImage(root, "Background", campAssets.camp_hub_background_default_960x720, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
 	background.ScaleType = Enum.ScaleType.Crop
 
-	local panel = createImage(root, "MainBoard", campAssets.camp_panel_main_default_768x512, UDim2.fromScale(0.045, 0.055), UDim2.fromScale(0.63, 0.88))
+	local panel = createPanelBox(root, "MainBoard", UDim2.fromScale(0.045, 0.055), UDim2.fromScale(0.63, 0.88), 0.16)
 	createText(panel, "Title", "Goblin Camp", UDim2.fromScale(0.08, 0.085), UDim2.fromScale(0.34, 0.07), 26)
 
 	appearanceBadge = createImage(panel, "GrowthLevelBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.82, 0.07), UDim2.fromScale(0.09, 0.12))
 	appearanceText = createText(panel, "GrowthLevelText", "", UDim2.fromScale(0.55, 0.075), UDim2.fromScale(0.24, 0.1), 13)
 	appearanceText.TextXAlignment = Enum.TextXAlignment.Right
 
-	local infoBoard = Instance.new("Frame")
-	infoBoard.Name = "TopInfoBoard"
-	infoBoard.BackgroundColor3 = Color3.fromRGB(35, 28, 24)
-	infoBoard.BackgroundTransparency = 0.2
-	infoBoard.BorderSizePixel = 0
-	infoBoard.Position = UDim2.fromScale(0.08, 0.19)
-	infoBoard.Size = UDim2.fromScale(0.84, 0.13)
-	infoBoard.Parent = panel
+	local infoBoard = createPanelBox(panel, "TopInfoBoard", UDim2.fromScale(0.08, 0.19), UDim2.fromScale(0.84, 0.13), 0.1)
 
 	createImage(infoBoard, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.04, 0.18), UDim2.fromScale(0.08, 0.56))
 	createImage(infoBoard, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.33, 0.18), UDim2.fromScale(0.08, 0.56))
@@ -376,13 +371,12 @@ local function buildCamp()
 	campLevelText = createText(infoBoard, "CampLevel", "", UDim2.fromScale(0.56, 0.18), UDim2.fromScale(0.35, 0.6), 15)
 	campLevelText.TextXAlignment = Enum.TextXAlignment.Right
 
-	local healthCard = createImage(panel, "HealthCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.08, 0.37), UDim2.fromScale(0.4, 0.22))
+	local healthCard = createPanelBox(panel, "HealthCard", UDim2.fromScale(0.08, 0.37), UDim2.fromScale(0.4, 0.22), 0.08)
 	createImage(healthCard, "Icon", campAssets.icon_upgrade_health_default_256x256, UDim2.fromScale(0.06, 0.18), UDim2.fromScale(0.16, 0.44))
-	healthUpgradeText = createText(healthCard, "Title", "", UDim2.fromScale(0.26, 0.12), UDim2.fromScale(0.52, 0.3), 14)
-	healthCostText = createText(healthCard, "Status", "", UDim2.fromScale(0.26, 0.43), UDim2.fromScale(0.62, 0.18), 11)
-	healthProgressFill = createProgress(healthCard, "Progress", UDim2.fromScale(0.26, 0.66), UDim2.fromScale(0.52, 0.08))
-	healthButton = createImageButton(healthCard, "BuyHealth", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.76), UDim2.fromScale(0.46, 0.18), "Buy", 14)
-	healthMaxBadge = createBadge(healthCard, "MaxBadge", "MAX", UDim2.fromScale(0.78, 0.62), UDim2.fromScale(0.16, 0.22), Color3.fromRGB(75, 125, 69))
+	healthUpgradeText = createText(healthCard, "Title", "", UDim2.fromScale(0.26, 0.11), UDim2.fromScale(0.56, 0.32), 15)
+	healthCostText = createText(healthCard, "Status", "", UDim2.fromScale(0.26, 0.45), UDim2.fromScale(0.62, 0.24), 12)
+	healthButton = createImageButton(healthCard, "BuyHealth", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.74), UDim2.fromScale(0.46, 0.19), "Buy", 14)
+	healthMaxBadge = createBadge(healthCard, "MaxBadge", "MAX", UDim2.fromScale(0.76, 0.72), UDim2.fromScale(0.18, 0.18), Color3.fromRGB(75, 125, 69))
 	healthMaxBadge.Visible = false
 	healthButton.Activated:Connect(function()
 		if healthButton.Visible and healthButton.Active then
@@ -390,13 +384,12 @@ local function buildCamp()
 		end
 	end)
 
-	local attackCard = createImage(panel, "AttackCard", campAssets.camp_card_upgrade_default_512x256, UDim2.fromScale(0.52, 0.37), UDim2.fromScale(0.4, 0.22))
+	local attackCard = createPanelBox(panel, "AttackCard", UDim2.fromScale(0.52, 0.37), UDim2.fromScale(0.4, 0.22), 0.08)
 	createImage(attackCard, "Icon", campAssets.icon_upgrade_attack_default_256x256, UDim2.fromScale(0.06, 0.18), UDim2.fromScale(0.16, 0.44))
-	attackUpgradeText = createText(attackCard, "Title", "", UDim2.fromScale(0.26, 0.12), UDim2.fromScale(0.52, 0.3), 14)
-	attackCostText = createText(attackCard, "Status", "", UDim2.fromScale(0.26, 0.43), UDim2.fromScale(0.62, 0.18), 11)
-	attackProgressFill = createProgress(attackCard, "Progress", UDim2.fromScale(0.26, 0.66), UDim2.fromScale(0.52, 0.08))
-	attackButton = createImageButton(attackCard, "BuyAttack", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.76), UDim2.fromScale(0.46, 0.18), "Buy", 14)
-	attackMaxBadge = createBadge(attackCard, "MaxBadge", "MAX", UDim2.fromScale(0.78, 0.62), UDim2.fromScale(0.16, 0.22), Color3.fromRGB(75, 125, 69))
+	attackUpgradeText = createText(attackCard, "Title", "", UDim2.fromScale(0.26, 0.11), UDim2.fromScale(0.56, 0.32), 15)
+	attackCostText = createText(attackCard, "Status", "", UDim2.fromScale(0.26, 0.45), UDim2.fromScale(0.62, 0.24), 12)
+	attackButton = createImageButton(attackCard, "BuyAttack", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.74), UDim2.fromScale(0.46, 0.19), "Buy", 14)
+	attackMaxBadge = createBadge(attackCard, "MaxBadge", "MAX", UDim2.fromScale(0.76, 0.72), UDim2.fromScale(0.18, 0.18), Color3.fromRGB(75, 125, 69))
 	attackMaxBadge.Visible = false
 	attackButton.Activated:Connect(function()
 		if attackButton.Visible and attackButton.Active then
@@ -404,8 +397,10 @@ local function buildCamp()
 		end
 	end)
 
-	local artifactCard = createImage(panel, "ArtifactBoard", campAssets.camp_card_artifact_default_512x256, UDim2.fromScale(0.08, 0.64), UDim2.fromScale(0.84, 0.21))
-	artifactSlotImage = createImage(artifactCard, "Slot", campAssets.camp_slot_artifact_empty_256x256, UDim2.fromScale(0.05, 0.17), UDim2.fromScale(0.11, 0.5))
+	local artifactCard = createPanelBox(panel, "ArtifactBoard", UDim2.fromScale(0.08, 0.64), UDim2.fromScale(0.84, 0.21), 0.08)
+	artifactSlotBox = createPanelBox(artifactCard, "Slot", UDim2.fromScale(0.05, 0.17), UDim2.fromScale(0.11, 0.5), 0.05)
+	artifactSlotText = createText(artifactSlotBox, "Text", "Empty", UDim2.fromScale(0.08, 0.22), UDim2.fromScale(0.84, 0.56), 10)
+	artifactSlotText.TextXAlignment = Enum.TextXAlignment.Center
 	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.19, 0.14), UDim2.fromScale(0.28, 0.52), 13)
 	swiftArtifactButton = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.48, 0.21), UDim2.fromScale(0.18, 0.28), "Swift", 12)
 	blastArtifactButton = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.68, 0.21), UDim2.fromScale(0.18, 0.28), "Blast", 12)
@@ -426,7 +421,7 @@ local function buildCamp()
 		end
 	end)
 
-	local actionPanel = createImage(root, "RunBoard", campAssets.camp_panel_result_default_768x384, UDim2.fromScale(0.69, 0.18), UDim2.fromScale(0.27, 0.56))
+	local actionPanel = createPanelBox(root, "RunBoard", UDim2.fromScale(0.69, 0.18), UDim2.fromScale(0.27, 0.56), 0.12)
 	createText(actionPanel, "Title", "Next Run", UDim2.fromScale(0.12, 0.15), UDim2.fromScale(0.72, 0.09), 22)
 	runReadinessText = createText(actionPanel, "Readiness", "", UDim2.fromScale(0.12, 0.27), UDim2.fromScale(0.76, 0.17), 14)
 	campActionStatusText = createText(actionPanel, "CampStatus", "", UDim2.fromScale(0.12, 0.48), UDim2.fromScale(0.76, 0.12), 13)
