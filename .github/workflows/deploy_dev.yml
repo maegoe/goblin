@@ -1,0 +1,63 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      # - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: "development"
+    env:
+      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY || secrets.ROBLOX_API_KEY }}
+      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID || secrets.ROBLOX_UNIVERSE_ID }}
+      ROBLOX_PLACE_ID: ${{ vars.ROBLOX_DEV_PLACE_ID || secrets.ROBLOX_DEV_PLACE_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rokit
+        shell: bash
+        run: |
+          curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+
+      - name: Install project tools
+        shell: bash
+        run: rokit install --no-trust-check
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ROBLOX_OPEN_CLOUD_API_KEY" || { echo "Missing ROBLOX_OPEN_CLOUD_API_KEY secret"; exit 1; }
+          test -n "$ROBLOX_UNIVERSE_ID" || { echo "Missing ROBLOX_UNIVERSE_ID variable"; exit 1; }
+          test -n "$ROBLOX_PLACE_ID" || { echo "Missing ROBLOX_PLACE_ID variable"; exit 1; }
+          echo "Deploying ${GITHUB_REF_NAME} to universe ${ROBLOX_UNIVERSE_ID}, place ${ROBLOX_PLACE_ID}"
+
+      - name: Build place
+        shell: bash
+        run: |
+          mkdir -p build
+          rojo build default.project.json -o build/game.rbxl
+
+      - name: Publish to Roblox
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          response_file="$(mktemp)"
+
+          curl --fail-with-body --show-error --silent \
+            --request POST \
+            --url "https://apis.roblox.com/universes/v1/${ROBLOX_UNIVERSE_ID}/places/${ROBLOX_PLACE_ID}/versions?versionType=Published" \
+            --header "x-api-key: ${ROBLOX_OPEN_CLOUD_API_KEY}" \
+            --header "Content-Type: application/octet-stream" \
+            --data-binary @build/game.rbxl \
+            > "$response_file"
+
+          echo "Publish response:"
+          cat "$response_file"
