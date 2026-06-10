@@ -412,7 +412,10 @@ function PlayerStateService.applyMovement(player)
 	local state = states[player]
 	local humanoid = getHumanoid(player)
 	if state and humanoid then
-		humanoid.WalkSpeed = state.MoveSpeed
+		humanoid.WalkSpeed = state.PendingChoices and 0 or state.MoveSpeed
+		if state.PendingChoices then
+			humanoid:Move(Vector3.zero)
+		end
 	end
 end
 
@@ -613,6 +616,7 @@ function PlayerStateService.setPendingChoices(player, choiceIds)
 	end
 
 	state.PendingChoices = choiceIds
+	PlayerStateService.applyMovement(player)
 
 	local choices = {}
 	for _, choice in ipairs(choiceIds) do
