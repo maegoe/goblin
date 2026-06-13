@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-13
+
+### Changed
+
+- KAN-95 follow-up: Replaced the supplied-image combat HUD treatment with a Roblox built-in UI component layout using layered frames, `UICorner`, `UIStroke`, `UIGradient`, `UIScale`, compact stat pills, and a forest-tuned fantasy palette while preserving existing health, XP, level, and survival-time data flow.
+
+### Validation
+
+- KAN-95 follow-up validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, and Studio MCP Play QA confirmed the HUD is top-right within the viewport, respects the Roblox top inset, uses the forest palette preview from `KAN95_hud_forest_palette_preview`, and updates Level, Time, HP, and XP values/fill ratios.
+
 ## 2026-06-10
 
 ### Changed

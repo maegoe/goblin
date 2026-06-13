@@ -3,20 +3,29 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Assets = require(Shared:WaitForChild("Assets"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local HudController = {}
 
-local HUD_SOURCE_SIZE = Vector2.new(256, 128)
-local HUD_DISPLAY_SIZE = Vector2.new(360, 180)
-local HUD_TOP_MARGIN = 14
+local HUD_BASE_SIZE = Vector2.new(430, 140)
+local HUD_TOP_MARGIN = 16
 local HUD_RIGHT_MARGIN = 16
-local HUD_MOBILE_SCALE = 0.195
-local HUD_ASSET = Assets.v1_0.hud.goblin_cartoon_hud_256x128_v4
+local HUD_MOBILE_SCALE = 0.78
+local TEXT_LIGHT = Color3.fromRGB(238, 231, 204)
+local TEXT_MUTED = Color3.fromRGB(157, 168, 129)
+local PANEL_DARK = Color3.fromRGB(18, 23, 17)
+local PANEL_DARKER = Color3.fromRGB(7, 10, 8)
+local STROKE_SOFT = Color3.fromRGB(112, 122, 82)
+local HEALTH_COLOR = Color3.fromRGB(188, 61, 47)
+local HEALTH_COLOR_2 = Color3.fromRGB(230, 112, 65)
+local XP_COLOR = Color3.fromRGB(74, 183, 139)
+local XP_COLOR_2 = Color3.fromRGB(143, 226, 163)
+local GOLD = Color3.fromRGB(218, 184, 91)
 
 local localPlayer = Players.LocalPlayer
-local hudPanel
+local screenGui
+local hudRoot
+local hudScale
 local healthFill
 local healthText
 local levelText
@@ -40,125 +49,205 @@ local function getHudScale()
 	return 1
 end
 
+local function createCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
+end
+
+local function createStroke(parent, color, thickness, transparency)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = thickness
+	stroke.Transparency = transparency or 0
+	stroke.Parent = parent
+	return stroke
+end
+
+local function createGradient(parent, topColor, bottomColor, rotation)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, topColor),
+		ColorSequenceKeypoint.new(1, bottomColor),
+	})
+	gradient.Rotation = rotation or 90
+	gradient.Parent = parent
+	return gradient
+end
+
+local function createLabel(parent, name, text, position, size, textSize, color, font)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.Font = font or Enum.Font.GothamBold
+	label.Text = text
+	label.TextColor3 = color or TEXT_LIGHT
+	label.TextScaled = false
+	label.TextSize = textSize
+	label.TextWrapped = false
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.Position = position
+	label.Size = size
+	label.ZIndex = parent.ZIndex + 1
+	label.Parent = parent
+
+	return label
+end
+
+local function createPill(parent, name, position, size, accentColor)
+	local pill = Instance.new("Frame")
+	pill.Name = name
+	pill.BackgroundColor3 = Color3.fromRGB(25, 29, 20)
+	pill.BackgroundTransparency = 0.08
+	pill.BorderSizePixel = 0
+	pill.Position = position
+	pill.Size = size
+	pill.ZIndex = parent.ZIndex + 1
+	pill.Parent = parent
+	createCorner(pill, 12)
+	createStroke(pill, accentColor, 1, 0.42)
+	createGradient(pill, Color3.fromRGB(39, 45, 31), Color3.fromRGB(12, 15, 11), 90)
+	return pill
+end
+
+local function createStatBar(parent, name, label, position, colorA, colorB)
+	local row = Instance.new("Frame")
+	row.Name = name
+	row.BackgroundColor3 = Color3.fromRGB(14, 18, 13)
+	row.BackgroundTransparency = 0.1
+	row.BorderSizePixel = 0
+	row.Position = position
+	row.Size = UDim2.fromOffset(398, 34)
+	row.ZIndex = parent.ZIndex + 1
+	row.Parent = parent
+	createCorner(row, 12)
+	createStroke(row, Color3.fromRGB(91, 101, 68), 1, 0.42)
+	createGradient(row, Color3.fromRGB(26, 31, 22), Color3.fromRGB(9, 12, 9), 90)
+
+	createLabel(row, "Label", label, UDim2.fromOffset(14, 3), UDim2.fromOffset(54, 14), 12, TEXT_MUTED, Enum.Font.GothamBlack)
+
+	local value = createLabel(row, "Value", "0 / 0", UDim2.fromOffset(284, 3), UDim2.fromOffset(100, 14), 12, TEXT_LIGHT, Enum.Font.GothamBold)
+	value.TextXAlignment = Enum.TextXAlignment.Right
+
+	local track = Instance.new("Frame")
+	track.Name = "Track"
+	track.BackgroundColor3 = Color3.fromRGB(21, 25, 19)
+	track.BorderSizePixel = 0
+	track.Position = UDim2.fromOffset(14, 20)
+	track.Size = UDim2.fromOffset(370, 10)
+	track.ClipsDescendants = true
+	track.ZIndex = row.ZIndex + 1
+	track.Parent = row
+	createCorner(track, 6)
+	createStroke(track, Color3.fromRGB(71, 79, 57), 1, 0.55)
+
+	local fill = Instance.new("Frame")
+	fill.Name = "Fill"
+	fill.BackgroundColor3 = colorA
+	fill.BorderSizePixel = 0
+	fill.Size = UDim2.fromScale(1, 1)
+	fill.ZIndex = track.ZIndex + 1
+	fill.Parent = track
+	createCorner(fill, 6)
+	createGradient(fill, colorA, colorB, 0)
+
+	local shine = Instance.new("Frame")
+	shine.Name = "Shine"
+	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	shine.BackgroundTransparency = 0.82
+	shine.BorderSizePixel = 0
+	shine.Size = UDim2.fromScale(1, 0.38)
+	shine.ZIndex = fill.ZIndex + 1
+	shine.Parent = fill
+	createCorner(shine, 6)
+
+	return fill, value
+end
+
 local function applyHudLayout()
-	if not hudPanel or not timeText then
+	if not hudRoot then
 		return
 	end
 
 	local scale = getHudScale()
-	local hudWidth = HUD_DISPLAY_SIZE.X * scale
-	local hudHeight = HUD_DISPLAY_SIZE.Y * scale
-	local marginRight = HUD_RIGHT_MARGIN
-	local marginTop = HUD_TOP_MARGIN
-
-	hudPanel.Position = UDim2.new(1, -marginRight, 0, marginTop)
-	hudPanel.Size = UDim2.fromOffset(hudWidth, hudHeight)
-
-	timeText.Position = UDim2.new(1, -marginRight - hudWidth, 0, marginTop + hudHeight + (2 * scale))
-	timeText.Size = UDim2.fromOffset(150 * scale, 24 * scale)
-end
-
-local function createLabel(parent, name, text, position, size)
-	local label = Instance.new("TextLabel")
-	label.Name = name
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBold
-	label.Text = text
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
-	label.TextScaled = true
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Position = position
-	label.Size = size
-	label.Parent = parent
-	return label
-end
-
-local function fromSourceRect(x, y, width, height)
-	return UDim2.fromScale(x / HUD_SOURCE_SIZE.X, y / HUD_SOURCE_SIZE.Y), UDim2.fromScale(width / HUD_SOURCE_SIZE.X, height / HUD_SOURCE_SIZE.Y)
-end
-
-local function createHudLabel(parent, name, text, x, y, width, height, textSize)
-	local position, size = fromSourceRect(x, y, width, height)
-	local label = createLabel(parent, name, text, position, size)
-	label.Font = Enum.Font.GothamBlack
-	label.TextScaled = true
-	label.TextStrokeColor3 = Color3.fromRGB(25, 18, 12)
-	label.TextStrokeTransparency = 0.25
-	label.TextXAlignment = Enum.TextXAlignment.Center
-	label.ZIndex = 4
-
-	local sizeLimit = Instance.new("UITextSizeConstraint")
-	sizeLimit.MinTextSize = 8
-	sizeLimit.MaxTextSize = textSize
-	sizeLimit.Parent = label
-
-	return label
-end
-
-local function createBar(parent, name, x, y, width, height, color)
-	local position, size = fromSourceRect(x, y, width, height)
-	local frame = Instance.new("Frame")
-	frame.Name = name
-	frame.BackgroundTransparency = 1
-	frame.BorderSizePixel = 0
-	frame.Position = position
-	frame.Size = size
-	frame.ClipsDescendants = true
-	frame.ZIndex = 2
-	frame.Parent = parent
-
-	local fill = Instance.new("Frame")
-	fill.Name = "Fill"
-	fill.BackgroundColor3 = color
-	fill.BorderSizePixel = 0
-	fill.Size = UDim2.fromScale(1, 1)
-	fill.ZIndex = 2
-	fill.Parent = frame
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 5)
-	corner.Parent = fill
-
-	return fill
+	hudRoot.AnchorPoint = Vector2.new(1, 0)
+	hudRoot.Position = UDim2.new(1, -HUD_RIGHT_MARGIN, 0, HUD_TOP_MARGIN)
+	hudRoot.Size = UDim2.fromOffset(HUD_BASE_SIZE.X, HUD_BASE_SIZE.Y)
+	if hudScale then
+		hudScale.Scale = scale
+	end
 end
 
 local function buildHud()
 	local playerGui = localPlayer:WaitForChild("PlayerGui")
 
-	local screenGui = Instance.new("ScreenGui")
+	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "GoblinHud"
 	screenGui.ResetOnSpawn = false
-	screenGui.IgnoreGuiInset = true
+	screenGui.IgnoreGuiInset = false
 	screenGui.Parent = playerGui
 
-	hudPanel = Instance.new("ImageLabel")
-	hudPanel.Name = "StatsPanel"
-	hudPanel.AnchorPoint = Vector2.new(1, 0)
-	hudPanel.BackgroundTransparency = 1
-	hudPanel.BorderSizePixel = 0
-	hudPanel.Image = HUD_ASSET
-	hudPanel.ZIndex = 1
-	hudPanel.Parent = screenGui
+	hudRoot = Instance.new("Frame")
+	hudRoot.Name = "Root"
+	hudRoot.BackgroundTransparency = 1
+	hudRoot.BorderSizePixel = 0
+	hudRoot.Parent = screenGui
 
-	local aspectRatio = Instance.new("UIAspectRatioConstraint")
-	aspectRatio.AspectRatio = HUD_SOURCE_SIZE.X / HUD_SOURCE_SIZE.Y
-	aspectRatio.Parent = hudPanel
+	hudScale = Instance.new("UIScale")
+	hudScale.Name = "HudScale"
+	hudScale.Scale = 1
+	hudScale.Parent = hudRoot
 
-	healthFill = createBar(hudPanel, "HealthBar", 105, 43, 128, 13, Color3.fromRGB(219, 65, 54))
-	healthText = createHudLabel(hudPanel, "HealthText", "100 / 100", 108, 41, 122, 18, 13)
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.62
+	shadow.BorderSizePixel = 0
+	shadow.Position = UDim2.fromOffset(4, 5)
+	shadow.Size = UDim2.fromScale(1, 1)
+	shadow.ZIndex = 1
+	shadow.Parent = hudRoot
+	createCorner(shadow, 16)
 
-	levelText = createHudLabel(hudPanel, "LevelText", "Lv 1", 144, 61, 56, 17, 13)
-	levelText.TextColor3 = Color3.fromRGB(255, 221, 121)
+	local panel = Instance.new("Frame")
+	panel.Name = "Panel"
+	panel.BackgroundColor3 = PANEL_DARK
+	panel.BackgroundTransparency = 0.08
+	panel.BorderSizePixel = 0
+	panel.Size = UDim2.fromScale(1, 1)
+	panel.ZIndex = 2
+	panel.Parent = hudRoot
+	createCorner(panel, 16)
+	createStroke(panel, STROKE_SOFT, 1.4, 0.18)
+	createGradient(panel, Color3.fromRGB(31, 38, 27), PANEL_DARKER, 90)
 
-	experienceFill = createBar(hudPanel, "ExperienceBar", 105, 78, 128, 13, Color3.fromRGB(89, 165, 255))
-	experienceText = createHudLabel(hudPanel, "ExperienceText", "0 / 30", 108, 76, 122, 18, 13)
+	local accent = Instance.new("Frame")
+	accent.Name = "AccentRail"
+	accent.BackgroundColor3 = Color3.fromRGB(118, 170, 92)
+	accent.BackgroundTransparency = 0
+	accent.BorderSizePixel = 0
+	accent.Position = UDim2.fromOffset(0, 16)
+	accent.Size = UDim2.fromOffset(4, 108)
+	accent.ZIndex = panel.ZIndex + 1
+	accent.Parent = panel
+	createCorner(accent, 4)
+	createGradient(accent, Color3.fromRGB(118, 170, 92), Color3.fromRGB(91, 156, 126), 90)
 
-	statusText = createLabel(screenGui, "StatusText", "", UDim2.fromScale(0.36, 0.08), UDim2.fromScale(0.28, 0.06))
-	statusText.TextXAlignment = Enum.TextXAlignment.Center
+	local levelPill = createPill(panel, "LevelPill", UDim2.fromOffset(16, 14), UDim2.fromOffset(100, 32), GOLD)
+	levelText = createLabel(levelPill, "Text", "Lv 1", UDim2.fromOffset(12, 0), UDim2.fromOffset(76, 32), 14, GOLD, Enum.Font.GothamBlack)
+	levelText.TextXAlignment = Enum.TextXAlignment.Center
 
-	timeText = createLabel(screenGui, "TimeText", "Time 00:00", UDim2.fromOffset(0, 0), UDim2.fromOffset(150, 24))
-	timeText.TextStrokeColor3 = Color3.fromRGB(25, 18, 12)
-	timeText.TextStrokeTransparency = 0.25
+	local timePill = createPill(panel, "TimePill", UDim2.fromOffset(126, 14), UDim2.fromOffset(288, 32), XP_COLOR)
+	timeText = createLabel(timePill, "Text", "00:00", UDim2.fromOffset(12, 0), UDim2.fromOffset(264, 32), 14, TEXT_LIGHT, Enum.Font.GothamBlack)
+	timeText.TextXAlignment = Enum.TextXAlignment.Center
+
+	statusText = createLabel(panel, "Status", "", UDim2.fromOffset(254, 14), UDim2.fromOffset(144, 32), 12, HEALTH_COLOR_2, Enum.Font.GothamBlack)
+	statusText.TextXAlignment = Enum.TextXAlignment.Right
+
+	healthFill, healthText = createStatBar(panel, "Health", "HP", UDim2.fromOffset(16, 58), HEALTH_COLOR, HEALTH_COLOR_2)
+	experienceFill, experienceText = createStatBar(panel, "Experience", "XP", UDim2.fromOffset(16, 96), XP_COLOR, XP_COLOR_2)
 
 	applyHudLayout()
 
@@ -183,12 +272,12 @@ local function updateHud(stats)
 	healthFill.Size = UDim2.fromScale(healthRatio, 1)
 
 	levelText.Text = string.format("Lv %d", stats.level)
-	timeText.Text = string.format("Time %s", formatTime(stats.survivalTime))
+	timeText.Text = formatTime(stats.survivalTime)
 
 	experienceText.Text = string.format("%d / %d", stats.experience, stats.experienceToNextLevel)
 	experienceFill.Size = UDim2.fromScale(experienceRatio, 1)
 
-	statusText.Text = stats.alive and "" or "Defeated"
+	statusText.Text = stats.alive and "" or "DEFEATED"
 end
 
 function HudController.start()
