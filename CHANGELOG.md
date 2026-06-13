@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-13
+
+### Added
+
+- KAN-97: Added a client loading screen before the main camp UI and preload pass for registered image/audio/runtime asset ids from `Assets.lua`, `AudioAssets.luau`, arena, enemy, weapon, and player sprite references. Follow-up keeps the loading page visible for at least 5 seconds, while still waiting longer when asset preload takes more time.
+
+### Validation
+
+- KAN-97 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, and Studio MCP Play QA confirmed `GoblinLoading` is removed after preload while `GoblinCamp` is shown and HUD/result UI stay hidden before a run. Follow-up Studio MCP Play QA confirmed the minimum loading duration with `[goblin] Loading screen completed in 5.03s`. Local Studio asset permission limitations produced preload warnings, so the final implementation records those warnings as a single summary and still allows game entry.
+
 ## 2026-06-10
 
 ### Changed
