@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-17
+
+### Changed
+
+- KAN-96 follow-up: Tuned the camp UI black-box treatment into a forest fantasy Roblox UI style with moss panels, olive strokes, rounded corners, subtle gradients, and warmer text colors while preserving numeric upgrade display and existing camp actions.
+
+### Validation
+
+- KAN-96 follow-up validation passed: `rojo build default.project.json -o build/game.rbxl` passed and `git diff --check` passed; Studio MCP visual/runtime QA is pending for the camp UI palette pass.
+
 ## 2026-06-10
 
 ### Changed
