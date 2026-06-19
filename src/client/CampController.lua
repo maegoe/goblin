@@ -39,12 +39,14 @@ local unequipArtifactButton
 local latestProgression = nil
 local latestAppearanceStage = nil
 
-local TEXT_LIGHT = Color3.fromRGB(247, 244, 226)
-local TEXT_MUTED = Color3.fromRGB(190, 181, 150)
-local TEXT_SUCCESS = Color3.fromRGB(151, 223, 143)
-local TEXT_WARNING = Color3.fromRGB(238, 185, 102)
-local BOX_BACKGROUND = Color3.fromRGB(5, 5, 5)
-local BOX_STROKE = Color3.fromRGB(76, 72, 64)
+local TEXT_LIGHT = Color3.fromRGB(238, 231, 204)
+local TEXT_MUTED = Color3.fromRGB(157, 168, 129)
+local TEXT_SUCCESS = Color3.fromRGB(143, 226, 163)
+local TEXT_WARNING = Color3.fromRGB(230, 168, 92)
+local BOX_BACKGROUND = Color3.fromRGB(18, 23, 17)
+local BOX_BACKGROUND_DARK = Color3.fromRGB(7, 10, 8)
+local BOX_STROKE = Color3.fromRGB(112, 122, 82)
+local BOX_STROKE_DIM = Color3.fromRGB(71, 79, 57)
 
 local function addTextConstraint(label, minSize, maxSize)
 	label.TextScaled = true
@@ -71,17 +73,29 @@ local function createPanelBox(parent, name, position, size, transparency)
 	local frame = Instance.new("Frame")
 	frame.Name = name
 	frame.BackgroundColor3 = BOX_BACKGROUND
-	frame.BackgroundTransparency = transparency or 0.12
+	frame.BackgroundTransparency = transparency or 0.08
 	frame.BorderSizePixel = 0
 	frame.Position = position
 	frame.Size = size
 	frame.Parent = parent
 
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = frame
+
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = BOX_STROKE
 	stroke.Thickness = 1
-	stroke.Transparency = 0.28
+	stroke.Transparency = 0.24
 	stroke.Parent = frame
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(31, 38, 27)),
+		ColorSequenceKeypoint.new(1, BOX_BACKGROUND_DARK),
+	})
+	gradient.Rotation = 90
+	gradient.Parent = frame
 
 	return frame
 end
@@ -119,6 +133,17 @@ local function createBadge(parent, name, text, position, size, color)
 	badge.Position = position
 	badge.Size = size
 	badge.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = badge
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE_DIM
+	stroke.Thickness = 1
+	stroke.Transparency = 0.36
+	stroke.Parent = badge
+
 	addTextConstraint(badge, 9, 14)
 	return badge
 end
@@ -280,7 +305,7 @@ local function updateCamp()
 
 	artifactText.Text = string.format("Equipped Artifact\n%s", getArtifactDisplayName(progression.EquippedArtifactId))
 	if artifactSlotBox then
-		artifactSlotBox.BackgroundColor3 = progression.EquippedArtifactId and Color3.fromRGB(12, 24, 12) or BOX_BACKGROUND
+		artifactSlotBox.BackgroundColor3 = progression.EquippedArtifactId and Color3.fromRGB(22, 38, 22) or BOX_BACKGROUND
 	end
 	if artifactSlotText then
 		artifactSlotText.Text = progression.EquippedArtifactId and "Equipped" or "Empty"
@@ -348,7 +373,7 @@ local function buildCamp()
 
 	root = Instance.new("Frame")
 	root.Name = "Root"
-	root.BackgroundColor3 = Color3.fromRGB(10, 12, 14)
+	root.BackgroundColor3 = Color3.fromRGB(8, 11, 8)
 	root.BorderSizePixel = 0
 	root.Size = UDim2.fromScale(1, 1)
 	root.Parent = gui
