@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-26
+
+### Changed
+
+- KAN-99: Expanded camp level and persistent upgrade caps from short V1.0 limits to 10 levels, extending camp material and Growth Stone cost curves while preserving existing upgrade types, per-level stat gains, saved data shape, camp actions, and numeric level/cost/MAX UI flow.
+
+### Validation
+
+- KAN-99 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, Studio MCP Edit-mode module inspection confirmed camp max/cost count, MaxHealth max/cost count, and AttackDamage max/cost count are all 10 in the freshly built place, and Studio Play client UI inspection confirmed camp/upgrade numeric labels display `0 / 10`. Studio Play purchase/save/restore QA remains a follow-up check.
+
 ## 2026-06-17
 
 ### Changed
