@@ -8,7 +8,7 @@
 
 ### Validation
 
-- KAN-98 static validation passed: `rojo build default.project.json -o build/game.rbxl` passed and `git diff --check` passed. PC/mobile Studio Play idle-transition QA remains pending because Roblox Studio MCP was not exposed in this session.
+- KAN-98 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, and manual PC Studio Play QA confirmed the player goblin returns to idle after movement input is released. Mobile Studio Play QA remains a follow-up check.
 
 ## 2026-06-17
 
