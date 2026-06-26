@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-26
+
+### Changed
+
+- KAN-98: Updated the in-arena player goblin sprite state selection so the character returns to the idle sprite sheet when movement input is released, while preserving existing keyboard/D-pad left/right/up/down mapping and conflict handling. Mobile joystick movement now falls back to `Humanoid.MoveDirection` for walk/idle selection.
+
+### Validation
+
+- KAN-98 static validation passed: `rojo build default.project.json -o build/game.rbxl` passed and `git diff --check` passed. PC/mobile Studio Play idle-transition QA remains pending because Roblox Studio MCP was not exposed in this session.
+
 ## 2026-06-17
 
 ### Changed
