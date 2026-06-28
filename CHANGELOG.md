@@ -4,10 +4,12 @@
 
 ### Changed
 
+- KAN-99: Expanded camp level and persistent upgrade caps from short V1.0 limits to 10 levels, extending camp material and Growth Stone cost curves while preserving existing upgrade types, per-level stat gains, saved data shape, camp actions, and numeric level/cost/MAX UI flow.
 - KAN-98: Updated the in-arena player goblin sprite state selection so the character returns to the idle sprite sheet when movement input is released, while preserving existing keyboard/D-pad left/right/up/down mapping and conflict handling. Mobile joystick movement now falls back to `Humanoid.MoveDirection` for walk/idle selection.
 
 ### Validation
 
+- KAN-99 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, Studio MCP Edit-mode module inspection confirmed camp max/cost count, MaxHealth max/cost count, and AttackDamage max/cost count are all 10 in the freshly built place, and Studio Play client UI inspection confirmed camp/upgrade numeric labels display `0 / 10`. Studio Play purchase/save/restore QA remains a follow-up check.
 - KAN-98 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, and manual PC Studio Play QA confirmed the player goblin returns to idle after movement input is released. Mobile Studio Play QA remains a follow-up check.
 
 ## 2026-06-17
