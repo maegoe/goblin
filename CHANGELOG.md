@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-02
+
+### Changed
+
+- KAN-107: Extended MaxHealth and AttackDamage persistent upgrades to 50 generated cost levels and added camp-level purchase caps where Camp Level N unlocks persistent upgrade level `N * 5`, capped at level 50. Camp UI now shows the current camp cap and disables purchases when the server would reject them for cap reasons.
+
+### Validation
+
+- KAN-107 local validation passed: persistent upgrade cost generation was verified at 50 entries per upgrade, camp cap values were verified for levels 0, 1, 2, 10, and 11, `/Users/imtaebin/.rokit/tool-storage/rojo-rbx/rojo/7.6.1/rojo build default.project.json -o build/game.rbxl` passed, and `git diff --check` passed. Studio runtime QA remains recommended for purchase flow, UI state, save, and reload behavior.
+
 ## 2026-06-28
 
 ### Changed

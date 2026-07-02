@@ -196,10 +196,15 @@ local function getNextUpgradeCost(progression, upgradeId)
 	local definition = PersistentUpgradeDefinitions[upgradeId]
 	local level = getUpgradeLevel(progression, upgradeId)
 	if not definition or level >= definition.MaxLevel then
-		return nil
+		return nil, "MaxLevel", definition and definition.MaxLevel or 0
 	end
 
-	return definition.Costs[level + 1]
+	local campCap = PersistentUpgradeDefinitions.getCampLevelCap(progression and progression.CampLevel)
+	if level >= campCap then
+		return nil, "CampLevelCap", campCap
+	end
+
+	return definition.Costs[level + 1], nil, campCap
 end
 
 local function getNextCampCost(progression)
@@ -253,9 +258,9 @@ local function setArtifactButtonState(button, artifactId, progression)
 	end
 end
 
-local function updateUpgradeCard(upgradeId, level, cost, resourceAmount, textLabel, costLabel, button, maxBadge)
+local function updateUpgradeCard(upgradeId, level, cost, blockedReason, campCap, resourceAmount, textLabel, costLabel, button, maxBadge)
 	local definition = PersistentUpgradeDefinitions[upgradeId]
-	local maxLevel = definition.MaxLevel
+	local maxLevel = math.min(definition.MaxLevel, campCap or definition.MaxLevel)
 	local displayName = upgradeId == "MaxHealth" and "Max Health" or "Attack"
 
 	textLabel.Text = string.format("%s\nLevel %d / %d", displayName, level, maxLevel)
@@ -267,6 +272,12 @@ local function updateUpgradeCard(upgradeId, level, cost, resourceAmount, textLab
 		button.Visible = true
 		maxBadge.Visible = false
 		setSecondaryButtonEnabled(button, canBuy, "Buy", "Need Stones")
+	elseif blockedReason == "CampLevelCap" then
+		costLabel.Text = string.format("Camp cap: level %d\nUpgrade camp to unlock more.", maxLevel)
+		costLabel.TextColor3 = TEXT_WARNING
+		button.Visible = true
+		maxBadge.Visible = false
+		setSecondaryButtonEnabled(button, false, "Buy", "Camp Cap")
 	else
 		costLabel.Text = string.format("Complete\nLevel %d / %d", level, maxLevel)
 		costLabel.TextColor3 = TEXT_SUCCESS
@@ -283,8 +294,8 @@ local function updateCamp()
 	local campLevel = progression.CampLevel or 0
 	local healthLevel = getUpgradeLevel(progression, "MaxHealth")
 	local attackLevel = getUpgradeLevel(progression, "AttackDamage")
-	local healthCost = getNextUpgradeCost(progression, "MaxHealth")
-	local attackCost = getNextUpgradeCost(progression, "AttackDamage")
+	local healthCost, healthBlockedReason, healthCampCap = getNextUpgradeCost(progression, "MaxHealth")
+	local attackCost, attackBlockedReason, attackCampCap = getNextUpgradeCost(progression, "AttackDamage")
 	local campCost = getNextCampCost(progression)
 
 	resourcesText.Text = string.format("Growth Stones  %d\nCamp Materials  %d", growthStones, campMaterials)
@@ -300,8 +311,30 @@ local function updateCamp()
 		appearanceBadge.Image = appearanceStage.BadgeAssetId
 	end
 
-	updateUpgradeCard("MaxHealth", healthLevel, healthCost, growthStones, healthUpgradeText, healthCostText, healthButton, healthMaxBadge)
-	updateUpgradeCard("AttackDamage", attackLevel, attackCost, growthStones, attackUpgradeText, attackCostText, attackButton, attackMaxBadge)
+	updateUpgradeCard(
+		"MaxHealth",
+		healthLevel,
+		healthCost,
+		healthBlockedReason,
+		healthCampCap,
+		growthStones,
+		healthUpgradeText,
+		healthCostText,
+		healthButton,
+		healthMaxBadge
+	)
+	updateUpgradeCard(
+		"AttackDamage",
+		attackLevel,
+		attackCost,
+		attackBlockedReason,
+		attackCampCap,
+		growthStones,
+		attackUpgradeText,
+		attackCostText,
+		attackButton,
+		attackMaxBadge
+	)
 
 	artifactText.Text = string.format("Equipped Artifact\n%s", getArtifactDisplayName(progression.EquippedArtifactId))
 	if artifactSlotBox then

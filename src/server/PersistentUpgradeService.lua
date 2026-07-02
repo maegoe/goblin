@@ -24,13 +24,17 @@ local function getCurrentLevel(snapshot, upgradeId)
 	return math.max(0, math.floor(level))
 end
 
-local function getCost(definition, currentLevel)
+local function getCost(definition, currentLevel, campLevel)
 	local nextLevel = currentLevel + 1
 	if nextLevel > definition.MaxLevel then
-		return nil
+		return nil, "MaxLevel"
 	end
 
-	return definition.Costs[nextLevel]
+	if currentLevel >= PersistentUpgradeDefinitions.getCampLevelCap(campLevel) then
+		return nil, "CampLevelCap"
+	end
+
+	return definition.Costs[nextLevel], nil
 end
 
 function PersistentUpgradeService.purchase(player, upgradeId)
@@ -45,9 +49,9 @@ function PersistentUpgradeService.purchase(player, upgradeId)
 	end
 
 	local currentLevel = getCurrentLevel(snapshot, upgradeId)
-	local cost = getCost(definition, currentLevel)
+	local cost, blockedReason = getCost(definition, currentLevel, snapshot.CampLevel)
 	if not cost then
-		return false, "MaxLevel"
+		return false, blockedReason or "MaxLevel"
 	end
 	if snapshot.GrowthStones < cost then
 		return false, "NotEnoughGrowthStones"
@@ -55,7 +59,7 @@ function PersistentUpgradeService.purchase(player, upgradeId)
 
 	local saved = MetaProgressionService.update(player, function(progression)
 		local verifiedLevel = getCurrentLevel(progression, upgradeId)
-		local verifiedCost = getCost(definition, verifiedLevel)
+		local verifiedCost = getCost(definition, verifiedLevel, progression.CampLevel)
 		if not verifiedCost or progression.GrowthStones < verifiedCost then
 			return false
 		end
