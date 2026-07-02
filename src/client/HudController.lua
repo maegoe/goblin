@@ -7,7 +7,7 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local HudController = {}
 
-local HUD_BASE_SIZE = Vector2.new(430, 140)
+local HUD_BASE_SIZE = Vector2.new(430, 230)
 local HUD_TOP_MARGIN = 16
 local HUD_RIGHT_MARGIN = 16
 local HUD_MOBILE_SCALE = 0.78
@@ -33,11 +33,62 @@ local experienceFill
 local experienceText
 local timeText
 local statusText
+local maxHealthStatText
+local moveSpeedStatText
+local attackDamageStatText
+local attackRateStatText
+local attackRangeStatText
+local explosionStatText
+local returnButtonText
+local returnConfirmExpiresAt = 0
+local RETURN_CONFIRM_SECONDS = 3
 
 local function formatTime(totalSeconds)
 	local minutes = math.floor(totalSeconds / 60)
 	local seconds = math.floor(totalSeconds % 60)
 	return string.format("%02d:%02d", minutes, seconds)
+end
+
+local function formatCompactNumber(value, decimals)
+	if type(value) ~= "number" then
+		return "-"
+	end
+
+	local scale = 10 ^ decimals
+	local rounded = math.floor((value * scale) + 0.5) / scale
+	if rounded % 1 == 0 then
+		return tostring(rounded)
+	end
+
+	return string.format("%." .. tostring(decimals) .. "f", rounded):gsub("0+$", ""):gsub("%.$", "")
+end
+
+local function formatAttackRate(attackInterval)
+	if type(attackInterval) ~= "number" or attackInterval <= 0 then
+		return "-"
+	end
+
+	return formatCompactNumber(1 / attackInterval, 2) .. "/s"
+end
+
+local function formatExplosion(explosiveBolt)
+	if type(explosiveBolt) ~= "table" or explosiveBolt.enabled ~= true then
+		return "off"
+	end
+
+	local radius = formatCompactNumber(explosiveBolt.radius, 1)
+	local damagePercent = "-"
+	if type(explosiveBolt.damageMultiplier) == "number" then
+		damagePercent = formatCompactNumber(explosiveBolt.damageMultiplier * 100, 0) .. "%"
+	end
+
+	local suffix = ""
+	if explosiveBolt.amplified == true then
+		local sourceCount = type(explosiveBolt.sourceCount) == "number" and explosiveBolt.sourceCount or 2
+		suffix = " x" .. tostring(sourceCount)
+	end
+
+	return radius .. "r " .. damagePercent .. suffix
 end
 
 local function getHudScale()
@@ -112,6 +163,21 @@ local function createPill(parent, name, position, size, accentColor)
 	return pill
 end
 
+local function setReturnButtonText(text)
+	if returnButtonText then
+		returnButtonText.Text = text
+	end
+end
+
+local function resetReturnConfirmation(expiration)
+	task.delay(RETURN_CONFIRM_SECONDS, function()
+		if returnConfirmExpiresAt == expiration and os.clock() >= expiration then
+			returnConfirmExpiresAt = 0
+			setReturnButtonText("Return to Camp")
+		end
+	end)
+end
+
 local function createStatBar(parent, name, label, position, colorA, colorB)
 	local row = Instance.new("Frame")
 	row.Name = name
@@ -164,6 +230,28 @@ local function createStatBar(parent, name, label, position, colorA, colorB)
 	createCorner(shine, 6)
 
 	return fill, value
+end
+
+local function createMetric(parent, name, labelText, position)
+	local metric = Instance.new("Frame")
+	metric.Name = name
+	metric.BackgroundColor3 = Color3.fromRGB(16, 20, 14)
+	metric.BackgroundTransparency = 0.08
+	metric.BorderSizePixel = 0
+	metric.Position = position
+	metric.Size = UDim2.fromOffset(126, 20)
+	metric.ZIndex = parent.ZIndex + 1
+	metric.Parent = parent
+	createCorner(metric, 8)
+	createStroke(metric, Color3.fromRGB(71, 83, 57), 1, 0.56)
+
+	local label = createLabel(metric, "Label", labelText, UDim2.fromOffset(8, 0), UDim2.fromOffset(40, 20), 10, TEXT_MUTED, Enum.Font.GothamBlack)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+
+	local value = createLabel(metric, "Value", "-", UDim2.fromOffset(44, 0), UDim2.fromOffset(74, 20), 11, TEXT_LIGHT, Enum.Font.GothamBold)
+	value.TextXAlignment = Enum.TextXAlignment.Right
+
+	return value
 end
 
 local function applyHudLayout()
@@ -229,7 +317,7 @@ local function buildHud()
 	accent.BackgroundTransparency = 0
 	accent.BorderSizePixel = 0
 	accent.Position = UDim2.fromOffset(0, 16)
-	accent.Size = UDim2.fromOffset(4, 108)
+	accent.Size = UDim2.fromOffset(4, 198)
 	accent.ZIndex = panel.ZIndex + 1
 	accent.Parent = panel
 	createCorner(accent, 4)
@@ -248,6 +336,44 @@ local function buildHud()
 
 	healthFill, healthText = createStatBar(panel, "Health", "HP", UDim2.fromOffset(16, 58), HEALTH_COLOR, HEALTH_COLOR_2)
 	experienceFill, experienceText = createStatBar(panel, "Experience", "XP", UDim2.fromOffset(16, 96), XP_COLOR, XP_COLOR_2)
+	maxHealthStatText = createMetric(panel, "MaxHealthStat", "MAX", UDim2.fromOffset(16, 136))
+	moveSpeedStatText = createMetric(panel, "MoveSpeedStat", "MOV", UDim2.fromOffset(152, 136))
+	attackDamageStatText = createMetric(panel, "AttackDamageStat", "ATK", UDim2.fromOffset(288, 136))
+	attackRateStatText = createMetric(panel, "AttackRateStat", "RATE", UDim2.fromOffset(16, 160))
+	attackRangeStatText = createMetric(panel, "AttackRangeStat", "RNG", UDim2.fromOffset(152, 160))
+	explosionStatText = createMetric(panel, "ExplosionStat", "EXP", UDim2.fromOffset(288, 160))
+
+	local returnButton = Instance.new("TextButton")
+	returnButton.Name = "ReturnToCamp"
+	returnButton.BackgroundColor3 = Color3.fromRGB(35, 37, 28)
+	returnButton.BackgroundTransparency = 0.04
+	returnButton.BorderSizePixel = 0
+	returnButton.AutoButtonColor = true
+	returnButton.Font = Enum.Font.GothamBlack
+	returnButton.Text = ""
+	returnButton.Position = UDim2.fromOffset(16, 194)
+	returnButton.Size = UDim2.fromOffset(398, 26)
+	returnButton.ZIndex = panel.ZIndex + 1
+	returnButton.Parent = panel
+	createCorner(returnButton, 10)
+	createStroke(returnButton, Color3.fromRGB(178, 143, 73), 1, 0.2)
+	createGradient(returnButton, Color3.fromRGB(73, 61, 37), Color3.fromRGB(25, 26, 19), 90)
+
+	returnButtonText = createLabel(returnButton, "Text", "Return to Camp", UDim2.fromScale(0.05, 0), UDim2.fromScale(0.9, 1), 12, GOLD, Enum.Font.GothamBlack)
+	returnButtonText.TextXAlignment = Enum.TextXAlignment.Center
+	returnButton.Activated:Connect(function()
+		local now = os.clock()
+		if now < returnConfirmExpiresAt then
+			returnConfirmExpiresAt = 0
+			setReturnButtonText("Return to Camp")
+			Remotes.get(Remotes.Names.ReturnToCamp):FireServer()
+			return
+		end
+
+		returnConfirmExpiresAt = now + RETURN_CONFIRM_SECONDS
+		setReturnButtonText("Confirm Return")
+		resetReturnConfirmation(returnConfirmExpiresAt)
+	end)
 
 	applyHudLayout()
 
@@ -278,6 +404,13 @@ local function updateHud(stats)
 	experienceFill.Size = UDim2.fromScale(experienceRatio, 1)
 
 	statusText.Text = stats.alive and "" or "DEFEATED"
+
+	maxHealthStatText.Text = formatCompactNumber(stats.maxHealth, 0)
+	moveSpeedStatText.Text = formatCompactNumber(stats.moveSpeed, 1)
+	attackDamageStatText.Text = formatCompactNumber(stats.attackDamage, 0)
+	attackRateStatText.Text = formatAttackRate(stats.attackInterval)
+	attackRangeStatText.Text = formatCompactNumber(stats.attackRange, 0)
+	explosionStatText.Text = formatExplosion(stats.explosiveBolt)
 end
 
 function HudController.start()

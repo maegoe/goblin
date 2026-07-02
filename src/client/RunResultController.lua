@@ -113,7 +113,13 @@ local function showResult(result)
 	end
 
 	local progression = result.Progression or {}
-	titleText.Text = result.EndReason == "Defeat" and "Run Defeated" or "Run Ended"
+	if result.EndReason == "Defeat" then
+		titleText.Text = "Run Defeated"
+	elseif result.EndReason == "ReturnToCamp" then
+		titleText.Text = "Returned to Camp"
+	else
+		titleText.Text = "Run Ended"
+	end
 	summaryText.Text = string.format(
 		"Survival %s\nKills %d\nLevel Reached %d",
 		formatTime(result.SurvivalTime or 0),

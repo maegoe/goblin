@@ -8,6 +8,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArenaConfig = require(Shared:WaitForChild("ArenaConfig"))
 local Assets = require(Shared:WaitForChild("Assets"))
 local EnemyDefinitions = require(Shared:WaitForChild("EnemyDefinitions"))
+local EnemyStatScaling = require(Shared:WaitForChild("EnemyStatScaling"))
 
 local PlayerStateService = require(script.Parent:WaitForChild("PlayerStateService"))
 
@@ -232,13 +233,14 @@ function EnemyService.clear()
 	enemies = {}
 end
 
-function EnemyService.spawn(enemyType, position)
+function EnemyService.spawn(enemyType, position, sessionElapsed)
 	local definition = EnemyDefinitions[enemyType]
 	if not definition then
 		warn(string.format("[goblin] Unknown enemy type: %s", tostring(enemyType)))
 		return nil
 	end
 
+	local scaledStats = EnemyStatScaling.apply(definition, sessionElapsed)
 	local enemy = Instance.new("Part")
 	enemy.Name = enemyType
 	enemy.Shape = Enum.PartType.Ball
@@ -256,6 +258,22 @@ function EnemyService.spawn(enemyType, position)
 	local spriteImage = spriteSheet and spriteSheet.Image or enemyAssets.combat_monster_default_512x512
 	local sprite = createSpriteBillboard(enemy, spriteImage, spriteSize, spriteColor, spriteSheet)
 
+	enemy:SetAttribute("EnemyType", enemyType)
+	enemy:SetAttribute("BaseMaxHealth", definition.MaxHealth)
+	enemy:SetAttribute("AppliedMaxHealth", scaledStats.MaxHealth)
+	enemy:SetAttribute("BaseMoveSpeed", definition.MoveSpeed)
+	enemy:SetAttribute("AppliedMoveSpeed", scaledStats.MoveSpeed)
+	enemy:SetAttribute("BaseContactDamage", definition.ContactDamage)
+	enemy:SetAttribute("AppliedContactDamage", scaledStats.ContactDamage)
+	enemy:SetAttribute("BaseAttackDamage", definition.ContactDamage)
+	enemy:SetAttribute("AppliedAttackDamage", scaledStats.ContactDamage)
+	enemy:SetAttribute("CurrentHealth", scaledStats.MaxHealth)
+	enemy:SetAttribute("StatScaleElapsedSeconds", scaledStats.ElapsedSeconds)
+	enemy:SetAttribute("StatScaleProgress", scaledStats.Progress)
+	enemy:SetAttribute("HealthScale", scaledStats.Multipliers.MaxHealth)
+	enemy:SetAttribute("MoveSpeedScale", scaledStats.Multipliers.MoveSpeed)
+	enemy:SetAttribute("DamageScale", scaledStats.Multipliers.ContactDamage)
+
 	enemies[enemy] = {
 		Instance = enemy,
 		Sprite = sprite,
@@ -263,11 +281,11 @@ function EnemyService.spawn(enemyType, position)
 		SpawnedAt = os.clock(),
 		CurrentSpriteFrame = 0,
 		Type = enemyType,
-		Health = definition.MaxHealth,
-		MaxHealth = definition.MaxHealth,
-		MoveSpeed = definition.MoveSpeed,
+		Health = scaledStats.MaxHealth,
+		MaxHealth = scaledStats.MaxHealth,
+		MoveSpeed = scaledStats.MoveSpeed,
 		CollisionRadius = getCollisionRadius(definition),
-		ContactDamage = definition.ContactDamage,
+		ContactDamage = scaledStats.ContactDamage,
 		ContactInterval = definition.ContactInterval,
 		ExperienceReward = definition.ExperienceReward,
 		LastContactAt = {},
@@ -316,6 +334,7 @@ function EnemyService.damage(enemy, amount)
 
 	showDamageNumber(enemy.Position, amount)
 	data.Health -= amount
+	enemy:SetAttribute("CurrentHealth", math.max(0, data.Health))
 
 	if data.Health <= 0 then
 		enemies[enemy] = nil

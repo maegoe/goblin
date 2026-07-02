@@ -10,6 +10,63 @@ local WaveConfig = {
 	SpawnPositionAttempts = 12,
 	MaxEnemies = 76,
 	EnemiesPerSpawn = 1,
+	SwarmEvents = {
+		{
+			Id = "Swarm_090",
+			StartsAt = 90,
+			SpawnCount = 8,
+			BurstSize = 2,
+			BurstInterval = 0.25,
+			ExpiresAfter = 7,
+			MaxConcurrentEnemies = 42,
+			EnemyWeights = {
+				BasicSlime = 65,
+				FastSlime = 35,
+			},
+		},
+		{
+			Id = "Swarm_210",
+			StartsAt = 210,
+			SpawnCount = 12,
+			BurstSize = 3,
+			BurstInterval = 0.25,
+			ExpiresAfter = 8,
+			MaxConcurrentEnemies = 52,
+			EnemyWeights = {
+				BasicSlime = 55,
+				FastSlime = 35,
+				TankSlime = 10,
+			},
+		},
+		{
+			Id = "Swarm_360",
+			StartsAt = 360,
+			SpawnCount = 16,
+			BurstSize = 3,
+			BurstInterval = 0.22,
+			ExpiresAfter = 9,
+			MaxConcurrentEnemies = 60,
+			EnemyWeights = {
+				BasicSlime = 45,
+				FastSlime = 35,
+				TankSlime = 20,
+			},
+		},
+		{
+			Id = "Swarm_510",
+			StartsAt = 510,
+			SpawnCount = 20,
+			BurstSize = 4,
+			BurstInterval = 0.2,
+			ExpiresAfter = 10,
+			MaxConcurrentEnemies = 64,
+			EnemyWeights = {
+				BasicSlime = 35,
+				FastSlime = 35,
+				TankSlime = 30,
+			},
+		},
+	},
 	PressureStages = {
 		{
 			StartsAt = 0,
