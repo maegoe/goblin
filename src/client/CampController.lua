@@ -166,6 +166,32 @@ local function createImageButton(parent, name, image, position, size, text, maxT
 	return button
 end
 
+local getArtifactIcon
+
+local function createArtifactButton(parent, artifactId, position, size)
+	local definition = ArtifactDefinitions[artifactId]
+	local button = Instance.new("ImageButton")
+	button.Name = "Artifact" .. artifactId
+	button.BackgroundTransparency = 1
+	button.Image = campAssets.camp_card_artifact_default_512x256
+	button.Position = position
+	button.Size = size
+	button.ScaleType = Enum.ScaleType.Stretch
+	button.AutoButtonColor = false
+	button.Parent = parent
+
+	local icon = createImage(button, "Icon", getArtifactIcon(definition), UDim2.fromScale(0.06, 0.18), UDim2.fromScale(0.22, 0.54))
+	icon.ScaleType = Enum.ScaleType.Fit
+
+	local label = createText(button, "Label", definition and definition.DisplayName or artifactId, UDim2.fromScale(0.32, 0.14), UDim2.fromScale(0.58, 0.35), 12)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+
+	local state = createText(button, "State", "Owned", UDim2.fromScale(0.32, 0.52), UDim2.fromScale(0.58, 0.28), 10)
+	state.TextXAlignment = Enum.TextXAlignment.Left
+
+	return button
+end
+
 local function setButtonText(button, text)
 	local label = button and button:FindFirstChild("Label")
 	if label and label:IsA("TextLabel") then
@@ -243,7 +269,7 @@ local function getArtifactDefinition(artifactId)
 	return ArtifactDefinitions[artifactId]
 end
 
-local function getArtifactIcon(definition)
+getArtifactIcon = function(definition)
 	if not definition or type(definition.IconAssetKey) ~= "string" then
 		return campAssets.camp_slot_artifact_empty_256x256
 	end
@@ -298,16 +324,31 @@ local function setArtifactButtonState(button, artifactId, progression)
 		return
 	end
 
-	local equippedArtifactId = progression and progression.EquippedArtifactId
-	if equippedArtifactId == artifactId then
-		button.Image = campAssets.camp_button_secondary_pressed_512x128
-		setButtonText(button, "Equipped")
-	elseif ownsArtifact(progression, artifactId) then
-		button.Image = campAssets.camp_button_secondary_default_512x128
-		setButtonText(button, ArtifactDefinitions[artifactId].DisplayName)
-	else
-		button.Image = campAssets.camp_button_secondary_disabled_512x128
-		setButtonText(button, "Locked")
+	local definition = ArtifactDefinitions[artifactId]
+	local owned = ownsArtifact(progression, artifactId)
+	local equipped = progression and progression.EquippedArtifactId == artifactId
+
+	button.Active = owned
+	button.Image = equipped and campAssets.camp_card_artifact_selected_512x256 or campAssets.camp_card_artifact_default_512x256
+	button.ImageTransparency = owned and 0 or 0.35
+
+	local icon = button:FindFirstChild("Icon")
+	if icon and icon:IsA("ImageLabel") then
+		icon.Image = getArtifactIcon(definition)
+		icon.ImageTransparency = owned and 0 or 0.45
+	end
+
+	local label = button:FindFirstChild("Label")
+	if label and label:IsA("TextLabel") then
+		label.Text = definition and definition.DisplayName or "Unknown"
+		label.TextColor3 = owned and TEXT_LIGHT or TEXT_MUTED
+	end
+
+	local state = button:FindFirstChild("State")
+	if state and state:IsA("TextLabel") then
+		local stateLabel, stateColor = getArtifactStateLabel(progression, artifactId)
+		state.Text = stateLabel
+		state.TextColor3 = stateColor
 	end
 end
 
@@ -485,9 +526,10 @@ local function buildCamp()
 	artifactSlotText = createText(artifactSlotBox, "Text", "Empty", UDim2.fromScale(0.08, 0.22), UDim2.fromScale(0.84, 0.56), 10)
 	artifactSlotText.TextXAlignment = Enum.TextXAlignment.Center
 	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.19, 0.14), UDim2.fromScale(0.28, 0.52), 13)
-	artifactButtonsById.SwiftCharm = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.48, 0.21), UDim2.fromScale(0.18, 0.28), "Swift", 12)
-	artifactButtonsById.BlastCore = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.68, 0.21), UDim2.fromScale(0.18, 0.28), "Blast", 12)
-	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.56, 0.57), UDim2.fromScale(0.26, 0.25), "Unequip", 12)
+	artifactButtonsById = {}
+	artifactButtonsById.SwiftCharm = createArtifactButton(artifactCard, "SwiftCharm", UDim2.fromScale(0.48, 0.15), UDim2.fromScale(0.2, 0.43))
+	artifactButtonsById.BlastCore = createArtifactButton(artifactCard, "BlastCore", UDim2.fromScale(0.7, 0.15), UDim2.fromScale(0.2, 0.43))
+	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.57, 0.64), UDim2.fromScale(0.28, 0.24), "Unequip", 12)
 	artifactButtonsById.SwiftCharm.Activated:Connect(function()
 		if ownsArtifact(latestProgression, "SwiftCharm") then
 			Remotes.get(Remotes.Names.EquipArtifact):FireServer("SwiftCharm")
