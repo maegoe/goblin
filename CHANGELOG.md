@@ -10,7 +10,7 @@
 ### Validation
 
 - KAN-108 local asset validation passed: `discovery_icon_default_512x512.png` is 512x512, opaque PNG, 654,043 bytes, SHA-256 `D33A147A7006A0321AB7879B3F9194BB9CCDCC61554C2CF119C869673ED1BEDC`; `discovery_thumbnail_default_1920x1080.png` is 1920x1080, opaque PNG, 5,103,337 bytes, SHA-256 `50F6EF06810ABD2367FAA6B1EA4D052CC96B7B073E985756EA2E704DA1E29F0C`. Creator Hub/server-side application is complete per publishing confirmation.
-- KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. Roblox Studio runtime QA remains blocked in this execution environment; current KAN-112 icon replacement need remains blocked until PC/mobile visual QA can confirm icon readability.
+- KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. KAN-112 artifact icon review is complete: PC QA passed with the current Swift Charm and Blast Core icons, no replacement icon production is required, and any remaining mobile verification can continue from the `dev` branch.
 
 ## 2026-07-02
 
