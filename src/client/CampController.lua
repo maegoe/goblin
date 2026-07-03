@@ -352,6 +352,40 @@ local function setArtifactButtonState(button, artifactId, progression)
 	end
 end
 
+local function connectArtifactButton(button, artifactId)
+	button.MouseEnter:Connect(function()
+		previewedArtifactId = artifactId
+		updateArtifactSummary()
+	end)
+
+	button.MouseLeave:Connect(function()
+		if previewedArtifactId == artifactId then
+			previewedArtifactId = nil
+			updateArtifactSummary()
+		end
+	end)
+
+	button.SelectionGained:Connect(function()
+		previewedArtifactId = artifactId
+		updateArtifactSummary()
+	end)
+
+	button.SelectionLost:Connect(function()
+		if previewedArtifactId == artifactId then
+			previewedArtifactId = nil
+			updateArtifactSummary()
+		end
+	end)
+
+	button.Activated:Connect(function()
+		previewedArtifactId = artifactId
+		updateArtifactSummary()
+		if ownsArtifact(latestProgression, artifactId) then
+			Remotes.get(Remotes.Names.EquipArtifact):FireServer(artifactId)
+		end
+	end)
+end
+
 local function updateUpgradeCard(upgradeId, level, cost, resourceAmount, textLabel, costLabel, button, maxBadge)
 	local definition = PersistentUpgradeDefinitions[upgradeId]
 	local maxLevel = definition.MaxLevel
@@ -402,7 +436,10 @@ local function updateCamp()
 	updateUpgradeCard("MaxHealth", healthLevel, healthCost, growthStones, healthUpgradeText, healthCostText, healthButton, healthMaxBadge)
 	updateUpgradeCard("AttackDamage", attackLevel, attackCost, growthStones, attackUpgradeText, attackCostText, attackButton, attackMaxBadge)
 
-	artifactText.Text = string.format("Equipped Artifact\n%s", getArtifactDisplayName(progression.EquippedArtifactId))
+	if previewedArtifactId and not ArtifactDefinitions[previewedArtifactId] then
+		previewedArtifactId = nil
+	end
+	updateArtifactSummary()
 	if artifactSlotBox then
 		artifactSlotBox.BackgroundColor3 = progression.EquippedArtifactId and Color3.fromRGB(22, 38, 22) or BOX_BACKGROUND
 	end
@@ -530,16 +567,8 @@ local function buildCamp()
 	artifactButtonsById.SwiftCharm = createArtifactButton(artifactCard, "SwiftCharm", UDim2.fromScale(0.48, 0.15), UDim2.fromScale(0.2, 0.43))
 	artifactButtonsById.BlastCore = createArtifactButton(artifactCard, "BlastCore", UDim2.fromScale(0.7, 0.15), UDim2.fromScale(0.2, 0.43))
 	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.57, 0.64), UDim2.fromScale(0.28, 0.24), "Unequip", 12)
-	artifactButtonsById.SwiftCharm.Activated:Connect(function()
-		if ownsArtifact(latestProgression, "SwiftCharm") then
-			Remotes.get(Remotes.Names.EquipArtifact):FireServer("SwiftCharm")
-		end
-	end)
-	artifactButtonsById.BlastCore.Activated:Connect(function()
-		if ownsArtifact(latestProgression, "BlastCore") then
-			Remotes.get(Remotes.Names.EquipArtifact):FireServer("BlastCore")
-		end
-	end)
+	connectArtifactButton(artifactButtonsById.SwiftCharm, "SwiftCharm")
+	connectArtifactButton(artifactButtonsById.BlastCore, "BlastCore")
 	unequipArtifactButton.Activated:Connect(function()
 		if unequipArtifactButton.Active and latestProgression and latestProgression.EquippedArtifactId then
 			Remotes.get(Remotes.Names.UnequipArtifact):FireServer()
