@@ -73,6 +73,12 @@ local UpgradeDefinitions = {
 		EffectType = "IncreaseRewardMultiplier",
 		ValueFormat = "Percent",
 		Value = 0.18,
+		RarityValues = {
+			common = 0.05,
+			rare = 0.12,
+			epic = 0.18,
+			legend = 0.3,
+		},
 		Stackable = true,
 	},
 	MaxHealthUp = {

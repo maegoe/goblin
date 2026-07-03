@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-02
+
+### Changed
+
+- KAN-106: Lowered the RewardBoost/Camp Spoils level-up option values to rarity-specific rewards: common +5%, rare +12%, epic +18%, and legend +30%, while preserving the shared rarity multiplier behavior for other level-up options.
+
+### Validation
+
+- KAN-106 local validation passed: RewardBoost rarity values were verified from `src/shared/UpgradeDefinitions.lua`, `/Users/imtaebin/.rokit/tool-storage/rojo-rbx/rojo/7.6.1/rojo build default.project.json -o build/game.rbxl` passed, and `git diff --check` passed. Studio runtime QA remains recommended for in-game choice appearance and reward settlement.
+
 ## 2026-06-28
 
 ### Changed
