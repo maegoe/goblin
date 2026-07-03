@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-04
+
+### Added
+
+- KAN-113: Refined the existing camp artifact panel with icon-backed controls and compact artifact descriptions for `Swift Charm` and `Blast Core`, keeping artifact management lobby/camp-only.
+
+### Validation
+
+- KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. Roblox Studio runtime QA remains blocked in this execution environment; current KAN-112 icon replacement need remains blocked until PC/mobile visual QA can confirm icon readability.
 ## 2026-06-17
 
 ### Changed
