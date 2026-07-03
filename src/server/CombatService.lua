@@ -19,6 +19,15 @@ local projectileFolder
 local attackTimers = {}
 local projectiles = {}
 
+local function getWeaponDefinition(weaponId)
+	local definition = WeaponDefinitions[weaponId]
+	if type(definition) == "table" then
+		return definition
+	end
+
+	return nil
+end
+
 local function setExplosionSpriteFrame(sprite, spriteConfig, frameIndex)
 	local frameSize = spriteConfig.FrameSize
 	local columns = spriteConfig.Columns or spriteConfig.FrameCount or 1
@@ -104,24 +113,32 @@ local function getProjectileFolder()
 	return projectileFolder
 end
 
-local function createExplosionFeedback(position, radius)
+local function createExplosionFeedback(position, radius, amplified)
 	local feedback = Instance.new("Part")
-	feedback.Name = "ExplosionFeedback"
+	feedback.Name = amplified and "AmplifiedExplosionFeedback" or "ExplosionFeedback"
 	feedback.Anchored = true
 	feedback.CanCollide = false
 	feedback.CanQuery = false
 	feedback.CanTouch = false
 	feedback.Material = Enum.Material.SmoothPlastic
-	feedback.Color = Color3.fromRGB(255, 196, 64)
-	feedback.Transparency = 0.95
+	feedback.Color = amplified and Color3.fromRGB(255, 128, 56) or Color3.fromRGB(255, 196, 64)
+	feedback.Transparency = amplified and 0.9 or 0.95
 	feedback.Size = Vector3.new(radius * 0.25, 0.1, radius * 0.25)
 	feedback.Position = position + Vector3.new(0, 0.15, 0)
 	feedback.Parent = getProjectileFolder()
 
 	local sprite = createExplosionSpriteSurface(feedback, WeaponDefinitions.BasicBolt.ExplosionFeedbackSprite)
+	if sprite and amplified then
+		sprite.ImageColor3 = Color3.fromRGB(255, 170, 90)
+		sprite.ImageTransparency = 0
+	end
 	local fallbackDecal = nil
 	if not sprite then
 		fallbackDecal = createExplosionImageFallback(feedback)
+		if amplified then
+			fallbackDecal.Color3 = Color3.fromRGB(255, 170, 90)
+			fallbackDecal.Transparency = 0
+		end
 	end
 
 	local duration = WeaponDefinitions.BasicBolt.ExplosionFeedbackDuration
@@ -158,7 +175,66 @@ local function applyExplosion(player, position, directHitEnemy, directDamage)
 		ExperienceService.awardKill(player, killInfo)
 	end
 
-	createExplosionFeedback(position, explosion.Radius)
+	createExplosionFeedback(position, explosion.Radius, explosion.Amplified == true)
+end
+
+local function createMeleeFeedback(root, weapon)
+	local range = weapon.Range or 9
+	local feedback = Instance.new("Part")
+	feedback.Name = "BaselineMeleeFeedback"
+	feedback.Anchored = true
+	feedback.CanCollide = false
+	feedback.CanQuery = false
+	feedback.CanTouch = false
+	feedback.Material = Enum.Material.Neon
+	feedback.Color = weapon.FeedbackColor or Color3.fromRGB(255, 238, 160)
+	feedback.Transparency = 0.62
+	feedback.Size = Vector3.new(range * 2, 0.1, range * 2)
+	feedback.Position = root.Position + Vector3.new(0, 0.25, 0)
+	feedback.Parent = getProjectileFolder()
+
+	local duration = weapon.FeedbackDuration or 0.18
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(feedback, tweenInfo, {
+		Size = Vector3.new(range * 2.35, 0.1, range * 2.35),
+		Transparency = 1,
+	}):Play()
+	Debris:AddItem(feedback, duration + 0.1)
+end
+
+local function compareEnemyDistance(origin)
+	return function(left, right)
+		return (left.Position - origin).Magnitude < (right.Position - origin).Magnitude
+	end
+end
+
+local function performMeleeAttack(player, root, state, weapon)
+	local range = weapon.Range or 9
+	local damageMultiplier = weapon.DamageMultiplier or 1
+	local damage = math.max(1, math.floor((state.AttackDamage * damageMultiplier) + 0.5))
+	local maxTargets = weapon.MaxTargets or 1
+	local targets = EnemyService.getEnemiesInRadius(root.Position, range)
+
+	table.sort(targets, compareEnemyDistance(root.Position))
+
+	local hitCount = 0
+	for _, enemy in ipairs(targets) do
+		if hitCount >= maxTargets then
+			break
+		end
+
+		hitCount += 1
+		local killInfo = EnemyService.damage(enemy, damage)
+		FeedbackService.play(player, killInfo and FeedbackEvents.EnemyDeath or FeedbackEvents.EnemyHit)
+		ExperienceService.awardKill(player, killInfo)
+	end
+
+	if hitCount > 0 then
+		createMeleeFeedback(root, weapon)
+		return true
+	end
+
+	return false
 end
 
 local function createProjectile(player, target, damage, speed)
@@ -229,6 +305,15 @@ local function tryAttack(player, deltaTime)
 	attackTimers[player] = (attackTimers[player] or 0) + deltaTime
 	if attackTimers[player] < state.AttackInterval then
 		return
+	end
+
+	local meleeWeapon = getWeaponDefinition("BaselineMelee")
+	if meleeWeapon then
+		local meleeTarget = EnemyService.getNearestEnemy(root.Position, meleeWeapon.Range or 9)
+		if meleeTarget and performMeleeAttack(player, root, state, meleeWeapon) then
+			attackTimers[player] = 0
+			return
+		end
 	end
 
 	local target = EnemyService.getNearestEnemy(root.Position, state.AttackRange)

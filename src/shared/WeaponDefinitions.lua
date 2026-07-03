@@ -1,5 +1,18 @@
 local WeaponDefinitions = {
+	BaselineMelee = {
+		Id = "BaselineMelee",
+		DisplayName = "Training Slash",
+		Type = "Melee",
+		DamageMultiplier = 1,
+		Range = 9,
+		MaxTargets = 3,
+		FeedbackColor = Color3.fromRGB(255, 238, 160),
+		FeedbackDuration = 0.18,
+	},
 	BasicBolt = {
+		Id = "BasicBolt",
+		DisplayName = "Basic Bolt",
+		Type = "Projectile",
 		Damage = 18,
 		AttackInterval = 1.05,
 		Range = 48,

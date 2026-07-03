@@ -18,6 +18,7 @@ local PLAYER_SPRITE_FRAME_SIZE = Vector2.new(128, 128)
 local PLAYER_SPRITE_COLUMNS = 8
 local PLAYER_SPRITE_FRAME_COUNT = 8
 local PLAYER_SPRITE_FPS = 10
+local MOVE_DIRECTION_EPSILON = 0.05
 local PLAYER_SPRITES = {
 	idle = {
 		Image = "rbxassetid://118274519536442",
@@ -50,7 +51,6 @@ local lastPlayedSpriteState = "idle"
 local currentSpriteFrame = 0
 local spriteFrameElapsed = 0
 local shouldAnimateSprite = true
-local hasSeenDirectionalInput = false
 local directionInput = {
 	up = false,
 	down = false,
@@ -145,7 +145,23 @@ local function setPlayerSpriteState(spriteState, animate)
 	end
 end
 
-local function getRequestedSpriteState()
+local function getMoveDirectionSpriteState(moveDirection)
+	if math.abs(moveDirection.X) >= math.abs(moveDirection.Z) then
+		if moveDirection.X < 0 then
+			return "walkLeft"
+		end
+
+		return "walkRight"
+	end
+
+	if moveDirection.Z < 0 then
+		return "walkLeft"
+	end
+
+	return "walkRight"
+end
+
+local function getRequestedSpriteState(humanoid)
 	local up = directionInput.up
 	local down = directionInput.down
 	local left = directionInput.left
@@ -153,14 +169,16 @@ local function getRequestedSpriteState()
 	local anyPressed = up or down or left or right
 
 	if not anyPressed then
-		if hasSeenDirectionalInput then
-			return lastPlayedSpriteState, false
+		if humanoid and humanoid.MoveDirection.Magnitude > MOVE_DIRECTION_EPSILON and humanoid.WalkSpeed > 0 then
+			return getMoveDirectionSpriteState(humanoid.MoveDirection), true
 		end
 
 		return "idle", true
 	end
 
-	hasSeenDirectionalInput = true
+	if humanoid and humanoid.WalkSpeed <= 0 then
+		return "idle", true
+	end
 
 	if up and down and left and right then
 		return "idle", true
@@ -231,13 +249,14 @@ end
 local function updatePlayerSprite(deltaTime)
 	local character = localPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if not root or not playerSprite then
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not root or not humanoid or not playerSprite then
 		return
 	end
 
 	applyAppearance()
 
-	local requestedState, animate = getRequestedSpriteState()
+	local requestedState, animate = getRequestedSpriteState(humanoid)
 	if currentSpriteState ~= requestedState or shouldAnimateSprite ~= animate then
 		setPlayerSpriteState(requestedState, animate)
 	end
@@ -265,7 +284,6 @@ function GoblinAppearanceController.start()
 		currentSpriteFrame = 0
 		spriteFrameElapsed = 0
 		shouldAnimateSprite = true
-		hasSeenDirectionalInput = false
 		task.defer(applyAppearance)
 	end)
 

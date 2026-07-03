@@ -16,4 +16,14 @@ assets/
 
 # Local Asphalt output and secrets
 .asphalt-debug/
+.tarmac-debug/
+.omc/
+.codex/config.toml
+QA/
 .env
+
+# Locally installed shared agent-team skills
+.agents/skills/agent-team-*/
+.agents/skills/persona-agent-team-*/
+.agents/skills/recipe-agent-team-*/
+.agents/skills/atlassian-mcp/

@@ -7,6 +7,7 @@ local RemoteNames = {
 	MetaProgressionChanged = "MetaProgressionChanged",
 	RunEnded = "RunEnded",
 	StartRun = "StartRun",
+	ReturnToCamp = "ReturnToCamp",
 	PurchaseCampLevel = "PurchaseCampLevel",
 	EquipArtifact = "EquipArtifact",
 	UnequipArtifact = "UnequipArtifact",

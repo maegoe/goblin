@@ -9,6 +9,54 @@
 ### Validation
 
 - KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. Roblox Studio runtime QA remains blocked in this execution environment; current KAN-112 icon replacement need remains blocked until PC/mobile visual QA can confirm icon readability.
+
+## 2026-07-02
+
+### Changed
+
+- KAN-106: Lowered the RewardBoost/Camp Spoils level-up option values to rarity-specific rewards: common +5%, rare +12%, epic +18%, and legend +30%, while preserving the shared rarity multiplier behavior for other level-up options.
+- KAN-107: Extended MaxHealth and AttackDamage persistent upgrades to 50 generated cost levels and added camp-level purchase caps where Camp Level N unlocks persistent upgrade level `N * 5`, capped at level 50. Camp UI now shows the current camp cap and disables purchases when the server would reject them for cap reasons.
+
+### Validation
+
+- KAN-106 local validation passed: RewardBoost rarity values were verified from `src/shared/UpgradeDefinitions.lua`, `/Users/imtaebin/.rokit/tool-storage/rojo-rbx/rojo/7.6.1/rojo build default.project.json -o build/game.rbxl` passed, and `git diff --check` passed. Studio runtime QA remains recommended for in-game choice appearance and reward settlement.
+- KAN-107 local validation passed: persistent upgrade cost generation was verified at 50 entries per upgrade, camp cap values were verified for levels 0, 1, 2, 10, and 11, `/Users/imtaebin/.rokit/tool-storage/rojo-rbx/rojo/7.6.1/rojo build default.project.json -o build/game.rbxl` passed, and `git diff --check` passed. Studio runtime QA remains recommended for purchase flow, UI state, save, and reload behavior.
+
+## 2026-06-28
+
+### Changed
+
+- KAN-99: Expanded the shared camp level cap and existing persistent upgrade caps to 10 levels. Camp, MaxHealth, and AttackDamage now derive `MaxLevel` from their cost curve lengths, preserving existing save keys, upgrade ids, per-level effects, purchase remotes, and KAN-96 numeric camp UI display paths.
+  user comment: it is duplicated with work on June 26. we need to improve both of them
+- KAN-101: Made Blast Core plus Explosive Bolt stacking explicit: Blast Core alone remains 10-stud / 20% splash, Explosive Bolt alone remains 14-stud / 45% splash, and both together produce an amplified capped 18-stud / 80% explosion with amplified feedback tint/name and stats payload values for follow-up display.
+- KAN-103: Added capped session-time enemy stat scaling. Spawned enemies now use elapsed-session scaling for health, movement speed, and contact damage while preserving base type roles, and expose base/applied stat attributes for Studio inspection.
+- KAN-100: Added an in-run Return to Camp HUD flow with a 3-second confirmation. Voluntary return uses the existing run result, reward, save, and camp return path with `ReturnToCamp` as the result reason.
+- KAN-102: Added a compact current-stats HUD grid for max health, movement speed, attack damage, attack rate, range, and explosion state using the existing `PlayerStatsChanged` data path.
+- KAN-104: Added a no-asset baseline melee weapon definition and server combat path. Close enemies are hit by a short-range Training Slash before ranged Basic Bolt targeting, while existing projectile and explosion behavior remains the fallback for enemies outside melee range.
+- KAN-105: Added timed enemy swarm events to the existing wave loop. Swarms queue at 90s, 210s, 360s, and 510s, drain in small bursts through the existing enemy spawn path, and respect current pressure-stage caps plus per-event max concurrent enemy limits for low-spec mitigation.
+
+### Validation
+
+- KAN-99 validation passed in the current workspace: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio purchase/save/rejoin restore QA remains pending.
+- KAN-101 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio runtime QA remains needed for artifact-only, trait-only, and combined explosion behavior.
+- KAN-103 local validation passed after adding `src/shared/EnemyStatScaling.lua` to the scoped diff: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio runtime QA remains needed for early/mid/late session scaling and role-readability checks.
+- KAN-100 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio runtime QA remains needed for return confirmation, result UI, reward/save persistence, enemy cleanup, and post-return Start Run.
+- KAN-102 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio PC/mobile visual QA remains needed for HUD readability and overlap.
+- KAN-104 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio runtime QA remains needed for close-range melee hit priority and ranged bolt/explosion regression.
+- KAN-105 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Studio runtime QA remains needed for scheduled swarm timing, capped burst pressure, reward flow, and mobile/low-spec concurrency behavior.
+
+## 2026-06-26
+
+### Changed
+
+- KAN-99: Expanded camp level and persistent upgrade caps from short V1.0 limits to 10 levels, extending camp material and Growth Stone cost curves while preserving existing upgrade types, per-level stat gains, saved data shape, camp actions, and numeric level/cost/MAX UI flow.
+- KAN-98: Updated the in-arena player goblin sprite state selection so the character returns to the idle sprite sheet when movement input is released, while preserving existing keyboard/D-pad left/right/up/down mapping and conflict handling. Mobile joystick movement now falls back to `Humanoid.MoveDirection` for walk/idle selection.
+
+### Validation
+
+- KAN-99 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, Studio MCP Edit-mode module inspection confirmed camp max/cost count, MaxHealth max/cost count, and AttackDamage max/cost count are all 10 in the freshly built place, and Studio Play client UI inspection confirmed camp/upgrade numeric labels display `0 / 10`. Studio Play purchase/save/restore QA remains a follow-up check.
+- KAN-98 validation passed: `rojo build default.project.json -o build/game.rbxl` passed, `git diff --check` passed, and manual PC Studio Play QA confirmed the player goblin returns to idle after movement input is released. Mobile Studio Play QA remains a follow-up check.
+
 ## 2026-06-17
 
 ### Changed

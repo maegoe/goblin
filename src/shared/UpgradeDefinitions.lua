@@ -73,6 +73,12 @@ local UpgradeDefinitions = {
 		EffectType = "IncreaseRewardMultiplier",
 		ValueFormat = "Percent",
 		Value = 0.18,
+		RarityValues = {
+			common = 0.05,
+			rare = 0.12,
+			epic = 0.18,
+			legend = 0.3,
+		},
 		Stackable = true,
 	},
 	MaxHealthUp = {
@@ -96,7 +102,7 @@ local UpgradeDefinitions = {
 	ExplosiveBolt = {
 		Id = "ExplosiveBolt",
 		DisplayName = "Explosive Bolt",
-		Description = "Basic bolts explode for 45% damage",
+		Description = "Basic bolts explode for 45% damage in a 14-stud radius",
 		Category = "Attack",
 		EffectType = "EnableExplosiveBolt",
 		ExplosionRadius = 14,

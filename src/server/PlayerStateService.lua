@@ -21,11 +21,17 @@ local states = {}
 local statsRemote
 local choicesRemote
 local startRunRemote
+local returnToCampRemote
 local statsAccumulator = 0
 local LEVEL_UP_CHOICE_COUNT = 3
 local DEFAULT_RARITY = "common"
 local DEFAULT_RARITY_LABEL = "Common"
 local DEFAULT_RARITY_COLOR = { 190, 198, 210 }
+-- KAN-101: two distinct explosion sources add this bonus, then clamp to these caps.
+local EXPLOSION_RADIUS_CAP = 18
+local EXPLOSION_DAMAGE_MULTIPLIER_CAP = 0.8
+local EXPLOSION_STACK_RADIUS_BONUS = 4
+local EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS = 0.15
 
 local function logState(player, message)
 	print(string.format("[goblin][PlayerState] %s: %s", player.Name, message))
@@ -133,6 +139,11 @@ local function requiresNumericValue(definition)
 end
 
 local function getUpgradeValue(definition, rarity)
+	local rarityValues = definition.RarityValues
+	if type(rarityValues) == "table" and isFiniteNumber(rarityValues[rarity]) then
+		return rarityValues[rarity]
+	end
+
 	if not isFiniteNumber(definition.Value) then
 		return nil
 	end
@@ -310,6 +321,45 @@ local function getEquippedArtifact(snapshot)
 	return artifactId, ArtifactDefinitions[artifactId]
 end
 
+local function copyArray(values)
+	local result = {}
+	if type(values) ~= "table" then
+		return result
+	end
+
+	for _, value in ipairs(values) do
+		table.insert(result, value)
+	end
+
+	return result
+end
+
+local function buildExplosionPayload(baseRadius, baseDamageMultiplier, sources)
+	local sourceCount = #sources
+	local amplified = sourceCount >= 2
+	local radius = baseRadius
+	local damageMultiplier = baseDamageMultiplier
+
+	if amplified then
+		radius += EXPLOSION_STACK_RADIUS_BONUS
+		damageMultiplier += EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS
+	end
+
+	return {
+		Radius = math.min(radius, EXPLOSION_RADIUS_CAP),
+		DamageMultiplier = math.min(damageMultiplier, EXPLOSION_DAMAGE_MULTIPLIER_CAP),
+		BaseRadius = baseRadius,
+		BaseDamageMultiplier = baseDamageMultiplier,
+		SourceCount = sourceCount,
+		Sources = sources,
+		Amplified = amplified,
+		RadiusCap = EXPLOSION_RADIUS_CAP,
+		DamageMultiplierCap = EXPLOSION_DAMAGE_MULTIPLIER_CAP,
+		StackRadiusBonus = EXPLOSION_STACK_RADIUS_BONUS,
+		StackDamageMultiplierBonus = EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS,
+	}
+end
+
 local function combineExplosiveBolt(currentExplosion, nextExplosion)
 	if type(nextExplosion) ~= "table" then
 		return currentExplosion
@@ -320,18 +370,18 @@ local function combineExplosiveBolt(currentExplosion, nextExplosion)
 	if not isFiniteNumber(nextRadius) or not isFiniteNumber(nextMultiplier) then
 		return currentExplosion
 	end
+	local nextSource = nextExplosion.Source or "Unknown"
 
 	if not currentExplosion then
-		return {
-			Radius = nextRadius,
-			DamageMultiplier = nextMultiplier,
-		}
+		return buildExplosionPayload(nextRadius, nextMultiplier, { nextSource })
 	end
 
-	return {
-		Radius = math.max(currentExplosion.Radius or 0, nextRadius),
-		DamageMultiplier = (currentExplosion.DamageMultiplier or 0) + nextMultiplier,
-	}
+	local sources = copyArray(currentExplosion.Sources)
+	table.insert(sources, nextSource)
+	local baseRadius = math.max(currentExplosion.BaseRadius or currentExplosion.Radius or 0, nextRadius)
+	local baseDamageMultiplier = (currentExplosion.BaseDamageMultiplier or currentExplosion.DamageMultiplier or 0) + nextMultiplier
+
+	return buildExplosionPayload(baseRadius, baseDamageMultiplier, sources)
 end
 
 local function createState(player, runActive)
@@ -349,6 +399,7 @@ local function createState(player, runActive)
 			explosiveBolt = combineExplosiveBolt(explosiveBolt, {
 				Radius = equippedArtifact.ExplosionRadius,
 				DamageMultiplier = equippedArtifact.ExplosionDamageMultiplier,
+				Source = equippedArtifact.Id or equippedArtifactId or "Artifact",
 			})
 		end
 	end
@@ -433,6 +484,28 @@ function PlayerStateService.publish(player)
 		experienceToNextLevel = state.ExperienceToNextLevel,
 		survivalTime = state.SurvivalTime,
 		alive = state.Alive,
+		moveSpeed = state.MoveSpeed,
+		attackDamage = state.AttackDamage,
+		attackInterval = state.AttackInterval,
+		attackRange = state.AttackRange,
+		explosiveBolt = state.ExplosiveBolt and {
+			enabled = true,
+			radius = state.ExplosiveBolt.Radius,
+			damageMultiplier = state.ExplosiveBolt.DamageMultiplier,
+			baseRadius = state.ExplosiveBolt.BaseRadius,
+			baseDamageMultiplier = state.ExplosiveBolt.BaseDamageMultiplier,
+			sourceCount = state.ExplosiveBolt.SourceCount,
+			sources = copyArray(state.ExplosiveBolt.Sources),
+			amplified = state.ExplosiveBolt.Amplified,
+			radiusCap = state.ExplosiveBolt.RadiusCap,
+			damageMultiplierCap = state.ExplosiveBolt.DamageMultiplierCap,
+			stackRadiusBonus = state.ExplosiveBolt.StackRadiusBonus,
+			stackDamageMultiplierBonus = state.ExplosiveBolt.StackDamageMultiplierBonus,
+		} or {
+			enabled = false,
+			radiusCap = EXPLOSION_RADIUS_CAP,
+			damageMultiplierCap = EXPLOSION_DAMAGE_MULTIPLIER_CAP,
+		},
 	})
 end
 
@@ -455,6 +528,34 @@ local function endRunAsDefeat(player, state, source)
 	))
 	RunResultService.endRun(player, state, "Defeat")
 	PlayerStateService.publish(player)
+
+	return true
+end
+
+local function endRunAsReturnToCamp(player, state)
+	if not state or not state.RunActive then
+		return false
+	end
+
+	state.Alive = false
+	state.RunActive = false
+	state.PendingChoices = nil
+
+	logState(player, string.format(
+		"returned to camp; survival=%.1f level=%d xp=%d kills=%d",
+		state.SurvivalTime,
+		state.Level,
+		state.Experience,
+		state.KillCount
+	))
+	RunResultService.endRun(player, state, "ReturnToCamp")
+	PlayerStateService.applyMovement(player)
+	PlayerStateService.publish(player)
+
+	if not EnemyService then
+		EnemyService = require(script.Parent:WaitForChild("EnemyService"))
+	end
+	EnemyService.clear()
 
 	return true
 end
@@ -534,9 +635,12 @@ function PlayerStateService.startRun(player)
 	PlayerStateService.applyJumpDisabled(player)
 	PlayerStateService.publish(player)
 	logState(player, string.format(
-		"StartRun accepted; maxHealth=%d attackDamage=%d",
+		"StartRun accepted; maxHealth=%d attackDamage=%d explosionRadius=%s explosionDamageMultiplier=%s explosionAmplified=%s",
 		states[player].MaxHealth,
-		states[player].AttackDamage
+		states[player].AttackDamage,
+		tostring(states[player].ExplosiveBolt and states[player].ExplosiveBolt.Radius or nil),
+		tostring(states[player].ExplosiveBolt and states[player].ExplosiveBolt.DamageMultiplier or nil),
+		tostring(states[player].ExplosiveBolt and states[player].ExplosiveBolt.Amplified or false)
 	))
 
 	return true
@@ -576,6 +680,7 @@ local function applyUpgradeDefinition(state, definition, value)
 		state.ExplosiveBolt = combineExplosiveBolt(state.ExplosiveBolt, {
 			Radius = definition.ExplosionRadius,
 			DamageMultiplier = definition.ExplosionDamageMultiplier,
+			Source = definition.Id or "ExplosiveBolt",
 		})
 		return true
 	end
@@ -771,6 +876,10 @@ function PlayerStateService.start()
 	startRunRemote = Remotes.get(Remotes.Names.StartRun)
 	startRunRemote.OnServerEvent:Connect(function(player)
 		PlayerStateService.startRun(player)
+	end)
+	returnToCampRemote = Remotes.get(Remotes.Names.ReturnToCamp)
+	returnToCampRemote.OnServerEvent:Connect(function(player)
+		endRunAsReturnToCamp(player, states[player])
 	end)
 
 	Players.PlayerAdded:Connect(onPlayerAdded)
