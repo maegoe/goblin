@@ -33,8 +33,8 @@ local appearanceText
 local campButton
 local healthButton
 local attackButton
-local swiftArtifactButton
-local blastArtifactButton
+local artifactButtonsById = {}
+local previewedArtifactId = nil
 local unequipArtifactButton
 local latestProgression = nil
 local latestAppearanceStage = nil
@@ -233,6 +233,64 @@ local function getArtifactDisplayName(artifactId)
 	end
 
 	return "Empty"
+end
+
+local function getArtifactDefinition(artifactId)
+	if type(artifactId) ~= "string" then
+		return nil
+	end
+
+	return ArtifactDefinitions[artifactId]
+end
+
+local function getArtifactIcon(definition)
+	if not definition or type(definition.IconAssetKey) ~= "string" then
+		return campAssets.camp_slot_artifact_empty_256x256
+	end
+
+	local assetId = campAssets[definition.IconAssetKey]
+	if type(assetId) == "string" then
+		return assetId
+	end
+
+	return campAssets.camp_slot_artifact_empty_256x256
+end
+
+local function getArtifactStateLabel(progression, artifactId)
+	if progression and progression.EquippedArtifactId == artifactId then
+		return "Equipped", TEXT_SUCCESS
+	end
+
+	if ownsArtifact(progression, artifactId) then
+		return "Owned", TEXT_LIGHT
+	end
+
+	return "Locked", TEXT_MUTED
+end
+
+local function formatArtifactSummary(progression, artifactId)
+	local definition = getArtifactDefinition(artifactId)
+	if not definition then
+		return "Equipped Artifact\nEmpty\nNo artifact effect active."
+	end
+
+	local stateLabel = getArtifactStateLabel(progression, artifactId)
+	return string.format(
+		"%s\n%s\n%s",
+		definition.DisplayName,
+		stateLabel,
+		definition.Description or "No description"
+	)
+end
+
+local function updateArtifactSummary()
+	if not artifactText then
+		return
+	end
+
+	local progression = latestProgression or {}
+	local artifactId = previewedArtifactId or progression.EquippedArtifactId
+	artifactText.Text = formatArtifactSummary(progression, artifactId)
 end
 
 local function setArtifactButtonState(button, artifactId, progression)
