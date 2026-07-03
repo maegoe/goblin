@@ -139,6 +139,11 @@ local function requiresNumericValue(definition)
 end
 
 local function getUpgradeValue(definition, rarity)
+	local rarityValues = definition.RarityValues
+	if type(rarityValues) == "table" and isFiniteNumber(rarityValues[rarity]) then
+		return rarityValues[rarity]
+	end
+
 	if not isFiniteNumber(definition.Value) then
 		return nil
 	end
