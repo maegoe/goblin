@@ -4,10 +4,12 @@
 
 ### Added
 
+- KAN-108: Finalized the Roblox discovery/profile handoff package with a 512x512 icon, exact 1920x1080 thumbnail, and direct English/Korean game description copy for the V1.0 release-prep profile.
 - KAN-113: Refined the existing camp artifact panel with icon-backed controls and compact artifact descriptions for `Swift Charm` and `Blast Core`, keeping artifact management lobby/camp-only.
 
 ### Validation
 
+- KAN-108 local asset validation passed: `discovery_icon_default_512x512.png` is 512x512, opaque PNG, 654,043 bytes, SHA-256 `D33A147A7006A0321AB7879B3F9194BB9CCDCC61554C2CF119C869673ED1BEDC`; `discovery_thumbnail_default_1920x1080.png` is 1920x1080, opaque PNG, 5,103,337 bytes, SHA-256 `50F6EF06810ABD2367FAA6B1EA4D052CC96B7B073E985756EA2E704DA1E29F0C`. Creator Hub/server-side application is complete per publishing confirmation.
 - KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. Roblox Studio runtime QA remains blocked in this execution environment; current KAN-112 icon replacement need remains blocked until PC/mobile visual QA can confirm icon readability.
 
 ## 2026-07-02
