@@ -369,8 +369,8 @@ local function updateCamp()
 		artifactSlotText.Text = progression.EquippedArtifactId and "Equipped" or "Empty"
 		artifactSlotText.TextColor3 = progression.EquippedArtifactId and TEXT_SUCCESS or TEXT_MUTED
 	end
-	setArtifactButtonState(swiftArtifactButton, "SwiftCharm", progression)
-	setArtifactButtonState(blastArtifactButton, "BlastCore", progression)
+	setArtifactButtonState(artifactButtonsById.SwiftCharm, "SwiftCharm", progression)
+	setArtifactButtonState(artifactButtonsById.BlastCore, "BlastCore", progression)
 	if unequipArtifactButton then
 		local canUnequip = progression.EquippedArtifactId ~= nil
 		setSecondaryButtonEnabled(unequipArtifactButton, canUnequip, "Unequip", "No Artifact")
@@ -485,15 +485,15 @@ local function buildCamp()
 	artifactSlotText = createText(artifactSlotBox, "Text", "Empty", UDim2.fromScale(0.08, 0.22), UDim2.fromScale(0.84, 0.56), 10)
 	artifactSlotText.TextXAlignment = Enum.TextXAlignment.Center
 	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.19, 0.14), UDim2.fromScale(0.28, 0.52), 13)
-	swiftArtifactButton = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.48, 0.21), UDim2.fromScale(0.18, 0.28), "Swift", 12)
-	blastArtifactButton = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.68, 0.21), UDim2.fromScale(0.18, 0.28), "Blast", 12)
+	artifactButtonsById.SwiftCharm = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.48, 0.21), UDim2.fromScale(0.18, 0.28), "Swift", 12)
+	artifactButtonsById.BlastCore = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.68, 0.21), UDim2.fromScale(0.18, 0.28), "Blast", 12)
 	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.56, 0.57), UDim2.fromScale(0.26, 0.25), "Unequip", 12)
-	swiftArtifactButton.Activated:Connect(function()
+	artifactButtonsById.SwiftCharm.Activated:Connect(function()
 		if ownsArtifact(latestProgression, "SwiftCharm") then
 			Remotes.get(Remotes.Names.EquipArtifact):FireServer("SwiftCharm")
 		end
 	end)
-	blastArtifactButton.Activated:Connect(function()
+	artifactButtonsById.BlastCore.Activated:Connect(function()
 		if ownsArtifact(latestProgression, "BlastCore") then
 			Remotes.get(Remotes.Names.EquipArtifact):FireServer("BlastCore")
 		end
