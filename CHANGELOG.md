@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-04
+
+### Changed
+
+- KAN-109: Added a level-up overlay toggle, `Auto 5s: OFF/ON`. Manual selection remains the default; when enabled, one currently displayed choice is randomly selected after 5 seconds unless the player selects first.
+- KAN-109 follow-up: Moved the `Auto 5s: OFF/ON` toggle from the top-right of the overlay to a centered position below the level-up selection options in both horizontal and vertical layouts.
+- KAN-110: Removed the current-version melee attack path by deleting the `BaselineMelee` weapon definition and the server-side melee attack/feedback branch, preserving the existing `BasicBolt` projectile combat loop.
+- KAN-111: Removed the visible attack explosion carrier square by making the explosion feedback host part fully transparent and shadowless while preserving the existing sprite sheet VFX, timing, damage, radius, and asset ids.
+
+### Validation
+
+- KAN-109/KAN-110/KAN-111 integrated validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with LF-to-CRLF working-copy warnings only, and a source scan found no remaining `BaselineMelee`, `Training Slash`, melee type, or melee helper symbols under `src`.
+- KAN-109 toggle placement follow-up validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with LF-to-CRLF working-copy warnings only.
+- Studio runtime QA remains pending before moving these tickets to completion: verify KAN-109 auto-select ON/OFF behavior, KAN-110 projectile-only combat at close range, and KAN-111 explosion VFX without a visible carrier square.
+
 ## 2026-07-02
 
 ### Changed

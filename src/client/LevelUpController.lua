@@ -11,14 +11,22 @@ local FeedbackAudioController = require(Client:WaitForChild("FeedbackAudioContro
 
 local LevelUpController = {}
 
+local AUTO_SELECT_DELAY_SECONDS = 5
+
 local localPlayer = Players.LocalPlayer
 local overlay
 local titleLabel
+local autoSelectToggle
 local choicesFrame
 local choicesSizeConstraint
 local choicesLayout
 local buttons = {}
 local buttonConnections = {}
+local autoSelectEnabled = false
+local activeChoiceToken = 0
+local activeSelectionMade = false
+local currentDisplayedChoices = {}
+local scheduleAutoSelect
 
 local ICON_BY_UPGRADE_ID = {
 	AttackDamageUp = "ATK",
@@ -87,6 +95,10 @@ local function applyChoiceLayout()
 		if titleLabel then
 			titleLabel.Position = UDim2.fromScale(0.5, 0.12)
 		end
+		if autoSelectToggle then
+			autoSelectToggle.Position = UDim2.new(0.5, 0, 0.84, 12)
+			autoSelectToggle.AnchorPoint = Vector2.new(0.5, 0)
+		end
 
 		choicesFrame.Size = UDim2.fromScale(0.86, 0.58)
 		choicesFrame.Position = UDim2.fromScale(0.5, 0.26)
@@ -106,6 +118,10 @@ local function applyChoiceLayout()
 		if titleLabel then
 			titleLabel.Position = UDim2.fromScale(0.5, 0.2)
 		end
+		if autoSelectToggle then
+			autoSelectToggle.Position = UDim2.new(0.5, 0, 0.66, 12)
+			autoSelectToggle.AnchorPoint = Vector2.new(0.5, 0)
+		end
 
 		choicesFrame.Size = UDim2.fromScale(0.9, 0.3)
 		choicesFrame.Position = UDim2.fromScale(0.5, 0.36)
@@ -122,6 +138,17 @@ local function applyChoiceLayout()
 			end
 		end
 	end
+end
+
+local function updateAutoSelectToggleText()
+	if not autoSelectToggle then
+		return
+	end
+
+	autoSelectToggle.Text = autoSelectEnabled and "Auto 5s: ON" or "Auto 5s: OFF"
+	autoSelectToggle.BackgroundColor3 = autoSelectEnabled
+		and Color3.fromRGB(50, 92, 62)
+		or Color3.fromRGB(35, 40, 48)
 end
 
 local function createButton(parent, index)
@@ -304,6 +331,40 @@ local function buildUi()
 	titleLabel.AnchorPoint = Vector2.new(0.5, 0)
 	titleLabel.Parent = overlay
 
+	autoSelectToggle = Instance.new("TextButton")
+	autoSelectToggle.Name = "AutoSelectToggle"
+	autoSelectToggle.BackgroundColor3 = Color3.fromRGB(35, 40, 48)
+	autoSelectToggle.BorderSizePixel = 0
+	autoSelectToggle.AutoButtonColor = true
+	autoSelectToggle.Font = Enum.Font.GothamBold
+	autoSelectToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	autoSelectToggle.TextScaled = true
+	autoSelectToggle.Size = UDim2.fromOffset(168, 36)
+	autoSelectToggle.Position = UDim2.new(0.5, 0, 0.66, 12)
+	autoSelectToggle.AnchorPoint = Vector2.new(0.5, 0)
+	autoSelectToggle.Parent = overlay
+	addTextSizeConstraint(autoSelectToggle, 10, 16)
+
+	local toggleCorner = Instance.new("UICorner")
+	toggleCorner.CornerRadius = UDim.new(0, 8)
+	toggleCorner.Parent = autoSelectToggle
+
+	local toggleStroke = Instance.new("UIStroke")
+	toggleStroke.Color = Color3.fromRGB(94, 104, 124)
+	toggleStroke.Thickness = 2
+	toggleStroke.Transparency = 0.15
+	toggleStroke.Parent = autoSelectToggle
+
+	autoSelectToggle.Activated:Connect(function()
+		autoSelectEnabled = not autoSelectEnabled
+		updateAutoSelectToggleText()
+
+		if autoSelectEnabled and overlay.Enabled and not activeSelectionMade then
+			scheduleAutoSelect(currentDisplayedChoices, activeChoiceToken)
+		end
+	end)
+	updateAutoSelectToggleText()
+
 	choicesFrame = Instance.new("Frame")
 	choicesFrame.Name = "Choices"
 	choicesFrame.BackgroundTransparency = 1
@@ -337,7 +398,49 @@ local function buildUi()
 	end
 end
 
+local function disconnectButtonConnections()
+	for connectionIndex, connection in pairs(buttonConnections) do
+		connection:Disconnect()
+		buttonConnections[connectionIndex] = nil
+	end
+end
+
+local function selectChoice(choice, choiceToken)
+	if activeSelectionMade or choiceToken ~= activeChoiceToken then
+		return
+	end
+	if not choice or not choice.id or not overlay.Enabled then
+		return
+	end
+
+	activeSelectionMade = true
+	overlay.Enabled = false
+	disconnectButtonConnections()
+	FeedbackAudioController.play(FeedbackEvents.UpgradeSelect)
+	Remotes.get(Remotes.Names.SelectUpgrade):FireServer(choice.id)
+end
+
+scheduleAutoSelect = function(displayedChoices, choiceToken)
+	if not autoSelectEnabled or #displayedChoices == 0 then
+		return
+	end
+
+	task.delay(AUTO_SELECT_DELAY_SECONDS, function()
+		if not autoSelectEnabled or choiceToken ~= activeChoiceToken or activeSelectionMade or not overlay.Enabled then
+			return
+		end
+
+		local choice = displayedChoices[math.random(#displayedChoices)]
+		selectChoice(choice, choiceToken)
+	end)
+end
+
 local function showChoices(choices)
+	activeChoiceToken += 1
+	activeSelectionMade = false
+	local choiceToken = activeChoiceToken
+	local displayedChoices = {}
+
 	overlay.Enabled = true
 	applyChoiceLayout()
 	FeedbackAudioController.play(FeedbackEvents.LevelUp)
@@ -352,20 +455,18 @@ local function showChoices(choices)
 		if choice then
 			button.Visible = true
 			setChoiceButton(button, choice)
+			table.insert(displayedChoices, choice)
 
 			buttonConnections[index] = button.Activated:Connect(function()
-				overlay.Enabled = false
-				for connectionIndex, connection in pairs(buttonConnections) do
-					connection:Disconnect()
-					buttonConnections[connectionIndex] = nil
-				end
-				FeedbackAudioController.play(FeedbackEvents.UpgradeSelect)
-				Remotes.get(Remotes.Names.SelectUpgrade):FireServer(choice.id)
+				selectChoice(choice, choiceToken)
 			end)
 		else
 			button.Visible = false
 		end
 	end
+
+	currentDisplayedChoices = displayedChoices
+	scheduleAutoSelect(displayedChoices, choiceToken)
 end
 
 function LevelUpController.start()
