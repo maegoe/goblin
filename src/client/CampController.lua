@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
@@ -25,16 +26,18 @@ local healthMaxBadge
 local attackUpgradeText
 local attackCostText
 local attackMaxBadge
-local artifactText
-local artifactSlotBox
-local artifactSlotText
 local appearanceBadge
 local appearanceText
 local campButton
 local healthButton
 local attackButton
-local swiftArtifactButton
-local blastArtifactButton
+local artifactSlotButtons = {}
+local artifactSlotArtifactIds = {}
+local previewedArtifactId = nil
+local artifactDetailBox
+local artifactDetailTitle
+local artifactDetailDescription
+local artifactDetailMeta
 local unequipArtifactButton
 local latestProgression = nil
 local latestAppearanceStage = nil
@@ -47,6 +50,10 @@ local BOX_BACKGROUND = Color3.fromRGB(18, 23, 17)
 local BOX_BACKGROUND_DARK = Color3.fromRGB(7, 10, 8)
 local BOX_STROKE = Color3.fromRGB(112, 122, 82)
 local BOX_STROKE_DIM = Color3.fromRGB(71, 79, 57)
+local ARTIFACT_SLOT_COUNT = 12
+local ARTIFACT_GRID_COLUMNS = 4
+local ARTIFACT_LONG_PRESS_SECONDS = 0.45
+local ARTIFACT_DOUBLE_TAP_SECONDS = 0.35
 
 local function addTextConstraint(label, minSize, maxSize)
 	label.TextScaled = true
@@ -166,6 +173,31 @@ local function createImageButton(parent, name, image, position, size, text, maxT
 	return button
 end
 
+local getArtifactIcon
+
+local function createArtifactSlot(parent, slotIndex, position, size)
+	local button = Instance.new("ImageButton")
+	button.Name = "ArtifactSlot" .. slotIndex
+	button.BackgroundTransparency = 1
+	button.Image = campAssets.camp_slot_artifact_empty_256x256
+	button.Position = position
+	button.Size = size
+	button.ScaleType = Enum.ScaleType.Fit
+	button.AutoButtonColor = false
+	button.Parent = parent
+
+	local icon = createImage(button, "Icon", campAssets.camp_slot_artifact_empty_256x256, UDim2.fromScale(0.18, 0.18), UDim2.fromScale(0.64, 0.64))
+	icon.ScaleType = Enum.ScaleType.Fit
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE_DIM
+	stroke.Thickness = 1
+	stroke.Transparency = 0.35
+	stroke.Parent = button
+
+	return button
+end
+
 local function setButtonText(button, text)
 	local label = button and button:FindFirstChild("Label")
 	if label and label:IsA("TextLabel") then
@@ -240,21 +272,223 @@ local function getArtifactDisplayName(artifactId)
 	return "Empty"
 end
 
-local function setArtifactButtonState(button, artifactId, progression)
+local function getArtifactDefinition(artifactId)
+	if type(artifactId) ~= "string" then
+		return nil
+	end
+
+	return ArtifactDefinitions[artifactId]
+end
+
+getArtifactIcon = function(definition)
+	if not definition or type(definition.IconAssetKey) ~= "string" then
+		return campAssets.camp_slot_artifact_empty_256x256
+	end
+
+	local assetId = campAssets[definition.IconAssetKey]
+	if type(assetId) == "string" then
+		return assetId
+	end
+
+	return campAssets.camp_slot_artifact_empty_256x256
+end
+
+local function getArtifactStateLabel(progression, artifactId)
+	if progression and progression.EquippedArtifactId == artifactId then
+		return "Equipped", TEXT_SUCCESS
+	end
+
+	if ownsArtifact(progression, artifactId) then
+		return "Owned", TEXT_LIGHT
+	end
+
+	return "Locked", TEXT_MUTED
+end
+
+local function formatArtifactEffect(definition)
+	if not definition then
+		return "Effect: None"
+	end
+
+	if definition.EffectType == "StatBonus" then
+		return string.format("Effect: %+g %s", definition.Value or 0, definition.StatKey or "Stat")
+	end
+
+	if definition.EffectType == "WeakExplosion" then
+		return string.format(
+			"Effect: %d%% explosion damage, %d stud radius",
+			math.floor(((definition.ExplosionDamageMultiplier or 0) * 100) + 0.5),
+			definition.ExplosionRadius or 0
+		)
+	end
+
+	return "Effect: " .. (definition.Description or "None")
+end
+
+local function hideArtifactDetail(artifactId)
+	if artifactId and previewedArtifactId ~= artifactId then
+		return
+	end
+
+	previewedArtifactId = nil
+	if artifactDetailBox then
+		artifactDetailBox.Visible = false
+	end
+end
+
+local function showArtifactDetail(artifactId)
+	local definition = getArtifactDefinition(artifactId)
+	if not definition or not artifactDetailBox then
+		return
+	end
+
+	local progression = latestProgression or {}
+	local stateLabel, stateColor = getArtifactStateLabel(progression, artifactId)
+	previewedArtifactId = artifactId
+
+	artifactDetailTitle.Text = definition.DisplayName or artifactId
+	artifactDetailDescription.Text = definition.Description or "No description"
+	artifactDetailMeta.Text = string.format("State: %s\n%s", stateLabel, formatArtifactEffect(definition))
+	artifactDetailMeta.TextColor3 = stateColor
+	artifactDetailBox.Visible = true
+end
+
+local function equipArtifact(artifactId)
+	if ownsArtifact(latestProgression, artifactId) then
+		Remotes.get(Remotes.Names.EquipArtifact):FireServer(artifactId)
+	end
+end
+
+local function isTouchActivation(inputObject)
+	if inputObject and inputObject.UserInputType == Enum.UserInputType.Touch then
+		return true
+	end
+
+	return UserInputService:GetLastInputType() == Enum.UserInputType.Touch
+end
+
+local function getOrderedOwnedArtifactIds(progression)
+	local ownedArtifactIds = {}
+	for _, artifactId in ipairs(ArtifactDefinitions.Order) do
+		if ownsArtifact(progression, artifactId) then
+			table.insert(ownedArtifactIds, artifactId)
+		end
+	end
+
+	return ownedArtifactIds
+end
+
+local function setArtifactSlotState(button, artifactId, progression)
 	if not button then
 		return
 	end
 
-	local equippedArtifactId = progression and progression.EquippedArtifactId
-	if equippedArtifactId == artifactId then
-		button.Image = campAssets.camp_button_secondary_pressed_512x128
-		setButtonText(button, "Equipped")
-	elseif ownsArtifact(progression, artifactId) then
-		button.Image = campAssets.camp_button_secondary_default_512x128
-		setButtonText(button, ArtifactDefinitions[artifactId].DisplayName)
-	else
-		button.Image = campAssets.camp_button_secondary_disabled_512x128
-		setButtonText(button, "Locked")
+	local definition = ArtifactDefinitions[artifactId]
+	local filled = definition ~= nil
+	local equipped = filled and progression and progression.EquippedArtifactId == artifactId
+
+	artifactSlotArtifactIds[button] = filled and artifactId or nil
+	button.Active = filled
+	button.Selectable = filled
+	button.Image = equipped and campAssets.camp_slot_artifact_equipped_256x256 or campAssets.camp_slot_artifact_empty_256x256
+	button.ImageTransparency = filled and 0 or 0.18
+
+	local icon = button:FindFirstChild("Icon")
+	if icon and icon:IsA("ImageLabel") then
+		icon.Image = filled and getArtifactIcon(definition) or campAssets.camp_slot_artifact_empty_256x256
+		icon.ImageTransparency = filled and 0 or 1
+	end
+
+	local stroke = button:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = equipped and TEXT_SUCCESS or BOX_STROKE_DIM
+		stroke.Transparency = filled and 0.2 or 0.55
+	end
+end
+
+local function connectArtifactSlot(button)
+	local touchHoldToken = 0
+	local lastTouchTapAt = 0
+
+	button.MouseEnter:Connect(function()
+		local artifactId = artifactSlotArtifactIds[button]
+		if artifactId then
+			showArtifactDetail(artifactId)
+		end
+	end)
+
+	button.MouseLeave:Connect(function()
+		hideArtifactDetail(artifactSlotArtifactIds[button])
+	end)
+
+	button.SelectionGained:Connect(function()
+		local artifactId = artifactSlotArtifactIds[button]
+		if artifactId then
+			showArtifactDetail(artifactId)
+		end
+	end)
+
+	button.SelectionLost:Connect(function()
+		hideArtifactDetail(artifactSlotArtifactIds[button])
+	end)
+
+	button.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+
+		local artifactId = artifactSlotArtifactIds[button]
+		if not artifactId then
+			return
+		end
+
+		touchHoldToken += 1
+		local token = touchHoldToken
+		task.delay(ARTIFACT_LONG_PRESS_SECONDS, function()
+			if touchHoldToken == token and artifactSlotArtifactIds[button] == artifactId then
+				showArtifactDetail(artifactId)
+			end
+		end)
+	end)
+
+	button.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			touchHoldToken += 1
+		end
+	end)
+
+	button.Activated:Connect(function(inputObject)
+		local artifactId = artifactSlotArtifactIds[button]
+		if not artifactId then
+			return
+		end
+
+		if isTouchActivation(inputObject) then
+			local now = os.clock()
+			if now - lastTouchTapAt <= ARTIFACT_DOUBLE_TAP_SECONDS then
+				showArtifactDetail(artifactId)
+				equipArtifact(artifactId)
+				lastTouchTapAt = 0
+			else
+				lastTouchTapAt = now
+			end
+			return
+		end
+
+		showArtifactDetail(artifactId)
+		equipArtifact(artifactId)
+	end)
+end
+
+local function updateArtifactSlots(progression)
+	local orderedOwnedArtifactIds = getOrderedOwnedArtifactIds(progression)
+
+	if previewedArtifactId and not ownsArtifact(progression, previewedArtifactId) then
+		hideArtifactDetail(previewedArtifactId)
+	end
+
+	for slotIndex, button in ipairs(artifactSlotButtons) do
+		setArtifactSlotState(button, orderedOwnedArtifactIds[slotIndex], progression)
 	end
 end
 
@@ -336,16 +570,13 @@ local function updateCamp()
 		attackMaxBadge
 	)
 
-	artifactText.Text = string.format("Equipped Artifact\n%s", getArtifactDisplayName(progression.EquippedArtifactId))
-	if artifactSlotBox then
-		artifactSlotBox.BackgroundColor3 = progression.EquippedArtifactId and Color3.fromRGB(22, 38, 22) or BOX_BACKGROUND
+	if previewedArtifactId and not ArtifactDefinitions[previewedArtifactId] then
+		hideArtifactDetail(previewedArtifactId)
 	end
-	if artifactSlotText then
-		artifactSlotText.Text = progression.EquippedArtifactId and "Equipped" or "Empty"
-		artifactSlotText.TextColor3 = progression.EquippedArtifactId and TEXT_SUCCESS or TEXT_MUTED
+	updateArtifactSlots(progression)
+	if previewedArtifactId then
+		showArtifactDetail(previewedArtifactId)
 	end
-	setArtifactButtonState(swiftArtifactButton, "SwiftCharm", progression)
-	setArtifactButtonState(blastArtifactButton, "BlastCore", progression)
 	if unequipArtifactButton then
 		local canUnequip = progression.EquippedArtifactId ~= nil
 		setSecondaryButtonEnabled(unequipArtifactButton, canUnequip, "Unequip", "No Artifact")
@@ -455,24 +686,38 @@ local function buildCamp()
 		end
 	end)
 
-	local artifactCard = createPanelBox(panel, "ArtifactBoard", UDim2.fromScale(0.08, 0.64), UDim2.fromScale(0.84, 0.21), 0.08)
-	artifactSlotBox = createPanelBox(artifactCard, "Slot", UDim2.fromScale(0.05, 0.17), UDim2.fromScale(0.11, 0.5), 0.05)
-	artifactSlotText = createText(artifactSlotBox, "Text", "Empty", UDim2.fromScale(0.08, 0.22), UDim2.fromScale(0.84, 0.56), 10)
-	artifactSlotText.TextXAlignment = Enum.TextXAlignment.Center
-	artifactText = createText(artifactCard, "Text", "", UDim2.fromScale(0.19, 0.14), UDim2.fromScale(0.28, 0.52), 13)
-	swiftArtifactButton = createImageButton(artifactCard, "EquipSwiftCharm", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.48, 0.21), UDim2.fromScale(0.18, 0.28), "Swift", 12)
-	blastArtifactButton = createImageButton(artifactCard, "EquipBlastCore", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.68, 0.21), UDim2.fromScale(0.18, 0.28), "Blast", 12)
-	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.56, 0.57), UDim2.fromScale(0.26, 0.25), "Unequip", 12)
-	swiftArtifactButton.Activated:Connect(function()
-		if ownsArtifact(latestProgression, "SwiftCharm") then
-			Remotes.get(Remotes.Names.EquipArtifact):FireServer("SwiftCharm")
-		end
-	end)
-	blastArtifactButton.Activated:Connect(function()
-		if ownsArtifact(latestProgression, "BlastCore") then
-			Remotes.get(Remotes.Names.EquipArtifact):FireServer("BlastCore")
-		end
-	end)
+	local artifactCard = createPanelBox(panel, "ArtifactBoard", UDim2.fromScale(0.08, 0.605), UDim2.fromScale(0.84, 0.315), 0.08)
+	createText(artifactCard, "Title", "Artifacts", UDim2.fromScale(0.05, 0.04), UDim2.fromScale(0.38, 0.1), 13)
+
+	artifactSlotButtons = {}
+	artifactSlotArtifactIds = {}
+	local slotWidth = 0.095
+	local slotHeight = 0.25
+	local slotGapX = 0.025
+	local slotGapY = 0.025
+	local gridX = 0.05
+	local gridY = 0.17
+	for slotIndex = 1, ARTIFACT_SLOT_COUNT do
+		local column = (slotIndex - 1) % ARTIFACT_GRID_COLUMNS
+		local row = math.floor((slotIndex - 1) / ARTIFACT_GRID_COLUMNS)
+		local slot = createArtifactSlot(
+			artifactCard,
+			slotIndex,
+			UDim2.fromScale(gridX + (column * (slotWidth + slotGapX)), gridY + (row * (slotHeight + slotGapY))),
+			UDim2.fromScale(slotWidth, slotHeight)
+		)
+		artifactSlotButtons[slotIndex] = slot
+		connectArtifactSlot(slot)
+	end
+
+	artifactDetailBox = createPanelBox(artifactCard, "ArtifactDetail", UDim2.fromScale(0.54, 0.13), UDim2.fromScale(0.41, 0.7), 0.05)
+	artifactDetailBox.Visible = false
+	artifactDetailTitle = createText(artifactDetailBox, "Title", "", UDim2.fromScale(0.08, 0.06), UDim2.fromScale(0.84, 0.17), 12)
+	artifactDetailDescription = createText(artifactDetailBox, "Description", "", UDim2.fromScale(0.08, 0.27), UDim2.fromScale(0.84, 0.35), 10)
+	artifactDetailDescription.TextColor3 = TEXT_MUTED
+	artifactDetailMeta = createText(artifactDetailBox, "Meta", "", UDim2.fromScale(0.08, 0.65), UDim2.fromScale(0.84, 0.29), 10)
+
+	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.61, 0.855), UDim2.fromScale(0.29, 0.115), "Unequip", 12)
 	unequipArtifactButton.Activated:Connect(function()
 		if unequipArtifactButton.Active and latestProgression and latestProgression.EquippedArtifactId then
 			Remotes.get(Remotes.Names.UnequipArtifact):FireServer()
