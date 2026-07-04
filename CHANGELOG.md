@@ -8,11 +8,22 @@
 - KAN-113: Refined the existing camp artifact panel with icon-backed controls and compact artifact descriptions for `Swift Charm` and `Blast Core`, keeping artifact management lobby/camp-only.
 - KAN-114: Updated the lobby/camp artifact panel into a fixed 4x3 inventory grid with 12 visible slots, icon-only filled cells, blank empty slots, and a contextual detail box for artifact name, description, and state/effect across PC hover, mobile long-press/double-tap, and controller focus/select paths.
 
+### Changed
+
+- KAN-109: Added a level-up overlay toggle, `Auto 5s: OFF/ON`. Manual selection remains the default; when enabled, one currently displayed choice is randomly selected after 5 seconds unless the player selects first.
+- KAN-109 follow-up: Moved the `Auto 5s: OFF/ON` toggle from the top-right of the overlay to a centered position below the level-up selection options in both horizontal and vertical layouts.
+- KAN-110: Removed the current-version melee attack path by deleting the `BaselineMelee` weapon definition and the server-side melee attack/feedback branch, preserving the existing `BasicBolt` projectile combat loop.
+- KAN-111: Removed the visible attack explosion carrier square by making the explosion feedback host part fully transparent and shadowless while preserving the existing sprite sheet VFX, timing, damage, radius, and asset ids.
+
 ### Validation
 
 - KAN-108 local asset validation passed: `discovery_icon_default_512x512.png` is 512x512, opaque PNG, 654,043 bytes, SHA-256 `D33A147A7006A0321AB7879B3F9194BB9CCDCC61554C2CF119C869673ED1BEDC`; `discovery_thumbnail_default_1920x1080.png` is 1920x1080, opaque PNG, 5,103,337 bytes, SHA-256 `50F6EF06810ABD2367FAA6B1EA4D052CC96B7B073E985756EA2E704DA1E29F0C`. Creator Hub/server-side application is complete per publishing confirmation.
 - KAN-113 static validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` exited successfully with the existing `CHANGELOG.md` LF-to-CRLF warning only. KAN-112 artifact icon review is complete: PC QA passed with the current Swift Charm and Blast Core icons, no replacement icon production is required, and any remaining mobile verification can continue from the `dev` branch.
 - KAN-114 static QA rerun passed: `git diff --check` exited successfully with the existing `src/client/CampController.lua` LF-to-CRLF warning only, `rojo build default.project.json -o build\game.rbxl` passed, and `_workspace/goblin-dev/KAN-114_qa_rerun.md` confirmed the 960x540 detail-box capacity and artifact slot touch-size fixes. Roblox Studio PC/mobile/controller runtime QA remains pending.
+- KAN-109/KAN-110/KAN-111 integrated validation passed: `rojo build default.project.json -o build\game.rbxl` passed, `git diff --check` passed with LF-to-CRLF working-copy warnings only, and a source scan found no remaining `BaselineMelee`, `Training Slash`, melee type, or melee helper symbols under `src`.
+- KAN-109 toggle placement follow-up validation passed: `rojo build default.project.json -o build\game.rbxl` passed and `git diff --check` passed with LF-to-CRLF working-copy warnings only.
+- Studio runtime QA remains pending before moving these tickets to completion: verify KAN-109 auto-select ON/OFF behavior, KAN-110 projectile-only combat at close range, and KAN-111 explosion VFX without a visible carrier square.
+
 
 ## 2026-07-02
 
