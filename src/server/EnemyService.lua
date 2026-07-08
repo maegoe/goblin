@@ -1,28 +1,20 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Debris = game:GetService("Debris")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArenaConfig = require(Shared:WaitForChild("ArenaConfig"))
-local Assets = require(Shared:WaitForChild("Assets"))
 local EnemyDefinitions = require(Shared:WaitForChild("EnemyDefinitions"))
 local EnemyStatScaling = require(Shared:WaitForChild("EnemyStatScaling"))
 
+local DamageNumberService = require(script.Parent:WaitForChild("DamageNumberService"))
+local EnemyVisuals = require(script.Parent:WaitForChild("EnemyVisuals"))
 local PlayerStateService = require(script.Parent:WaitForChild("PlayerStateService"))
 
 local EnemyService = {}
 
 local enemies = {}
 local enemyFolder
-local enemyAssets = Assets.v0_4.ingame_2d
-local BASIC_MONSTER_SPRITE_SIZE = Vector2.new(51, 51)
-local DEFAULT_SPRITE_COLOR = Color3.fromRGB(255, 255, 255)
-local DAMAGE_NUMBER_LIFETIME = 0.65
-local DAMAGE_NUMBER_RISE = 2.5
-local DAMAGE_NUMBER_FOLDER_NAME = "DamageNumbers"
-local DEFAULT_SPRITE_SHEET_FPS = 8
 
 local function getCollisionRadius(definition)
 	if definition.CollisionRadius then
@@ -31,124 +23,6 @@ local function getCollisionRadius(definition)
 
 	local size = definition.Size
 	return math.max(size.X, size.Z) * 0.5
-end
-
-local function setSpriteSheetFrame(sprite, spriteSheet, frameIndex)
-	local frameSize = spriteSheet.FrameSize
-	local columns = spriteSheet.Columns or spriteSheet.FrameCount or 1
-	local column = frameIndex % columns
-	local row = math.floor(frameIndex / columns)
-
-	sprite.ImageRectSize = frameSize
-	sprite.ImageRectOffset = Vector2.new(frameSize.X * column, frameSize.Y * row)
-end
-
-local function animateSpriteSheet(data, now)
-	local spriteSheet = data.SpriteSheet
-	if not data.Sprite or not spriteSheet or not spriteSheet.FrameSize then
-		return
-	end
-
-	local frameCount = spriteSheet.FrameCount or 1
-	local framesPerSecond = spriteSheet.FramesPerSecond or DEFAULT_SPRITE_SHEET_FPS
-	local frameIndex = math.floor((now - data.SpawnedAt) * framesPerSecond) % frameCount
-	if data.CurrentSpriteFrame == frameIndex then
-		return
-	end
-
-	data.CurrentSpriteFrame = frameIndex
-	setSpriteSheetFrame(data.Sprite, spriteSheet, frameIndex)
-end
-
-local function createSpriteBillboard(parent, image, size, color, spriteSheet)
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "CombatSprite"
-	billboard.Adornee = parent
-	billboard.AlwaysOnTop = false
-	billboard.LightInfluence = 0
-	billboard.MaxDistance = 250
-	billboard.Size = UDim2.fromOffset(size.X, size.Y)
-	billboard.StudsOffsetWorldSpace = Vector3.new(0, 0.35, 0)
-	billboard.Parent = parent
-
-	local sprite = Instance.new("ImageLabel")
-	sprite.Name = "Sprite"
-	sprite.BackgroundTransparency = 1
-	sprite.Image = image
-	sprite.ImageColor3 = color
-	sprite.ImageTransparency = 0
-	sprite.ScaleType = Enum.ScaleType.Fit
-	sprite.Size = UDim2.fromScale(1, 1)
-	if spriteSheet and spriteSheet.FrameSize then
-		setSpriteSheetFrame(sprite, spriteSheet, 0)
-	end
-	sprite.Parent = billboard
-
-	return sprite
-end
-
-local function getDamageNumberFolder()
-	local folder = Workspace:FindFirstChild(DAMAGE_NUMBER_FOLDER_NAME)
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = DAMAGE_NUMBER_FOLDER_NAME
-		folder.Parent = Workspace
-	end
-
-	return folder
-end
-
-local function formatDamageAmount(amount)
-	if amount % 1 == 0 then
-		return tostring(amount)
-	end
-
-	return string.format("%.1f", amount):gsub("0+$", ""):gsub("%.$", "")
-end
-
-local function showDamageNumber(position, amount)
-	local marker = Instance.new("Part")
-	marker.Name = "DamageNumber"
-	marker.Anchored = true
-	marker.CanCollide = false
-	marker.CanQuery = false
-	marker.CanTouch = false
-	marker.Transparency = 1
-	marker.Size = Vector3.new(0.2, 0.2, 0.2)
-	marker.Position = position + Vector3.new(0, 3.25, 0)
-	marker.Parent = getDamageNumberFolder()
-
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "DamageNumberBillboard"
-	billboard.Adornee = marker
-	billboard.AlwaysOnTop = true
-	billboard.LightInfluence = 0
-	billboard.MaxDistance = 180
-	billboard.Size = UDim2.fromOffset(80, 34)
-	billboard.Parent = marker
-
-	local label = Instance.new("TextLabel")
-	label.Name = "Amount"
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBold
-	label.Text = formatDamageAmount(amount)
-	label.TextColor3 = Color3.fromRGB(255, 238, 126)
-	label.TextScaled = true
-	label.TextStrokeColor3 = Color3.fromRGB(44, 28, 18)
-	label.TextStrokeTransparency = 0.15
-	label.Size = UDim2.fromScale(1, 1)
-	label.Parent = billboard
-
-	local tweenInfo = TweenInfo.new(DAMAGE_NUMBER_LIFETIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(marker, tweenInfo, {
-		Position = marker.Position + Vector3.new(0, DAMAGE_NUMBER_RISE, 0),
-	}):Play()
-	TweenService:Create(label, tweenInfo, {
-		TextTransparency = 1,
-		TextStrokeTransparency = 1,
-	}):Play()
-
-	Debris:AddItem(marker, DAMAGE_NUMBER_LIFETIME + 0.1)
 end
 
 local function getEnemyFolder()
@@ -252,11 +126,7 @@ function EnemyService.spawn(enemyType, position, sessionElapsed)
 	enemy.CanCollide = false
 	enemy.Position = ArenaConfig.clampToArena(position, ArenaConfig.SpawnMargin)
 	enemy.Parent = getEnemyFolder()
-	local spriteSize = definition.SpriteSize or BASIC_MONSTER_SPRITE_SIZE
-	local spriteColor = definition.SpriteColor or DEFAULT_SPRITE_COLOR
-	local spriteSheet = definition.SpriteSheet
-	local spriteImage = spriteSheet and spriteSheet.Image or enemyAssets.combat_monster_default_512x512
-	local sprite = createSpriteBillboard(enemy, spriteImage, spriteSize, spriteColor, spriteSheet)
+	local sprite, spriteSheet = EnemyVisuals.createSprite(enemy, definition)
 
 	enemy:SetAttribute("EnemyType", enemyType)
 	enemy:SetAttribute("BaseMaxHealth", definition.MaxHealth)
@@ -332,7 +202,7 @@ function EnemyService.damage(enemy, amount)
 		return nil
 	end
 
-	showDamageNumber(enemy.Position, amount)
+	DamageNumberService.show(enemy.Position, amount)
 	data.Health -= amount
 	enemy:SetAttribute("CurrentHealth", math.max(0, data.Health))
 
@@ -382,7 +252,7 @@ function EnemyService.start()
 
 			local direction = root.Position - enemy.Position
 			local flatDirection = Vector3.new(direction.X, 0, direction.Z)
-			animateSpriteSheet(data, now)
+			EnemyVisuals.animateSpriteSheet(data, now)
 
 			if distance > 3.5 then
 				if flatDirection.Magnitude > 0 then

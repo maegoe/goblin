@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
+local ArtifactUtils = require(Shared:WaitForChild("ArtifactUtils"))
 local Assets = require(Shared:WaitForChild("Assets"))
 local CampConfig = require(Shared:WaitForChild("CampConfig"))
 local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
@@ -173,8 +174,6 @@ local function createImageButton(parent, name, image, position, size, text, maxT
 	return button
 end
 
-local getArtifactIcon
-
 local function createArtifactSlot(parent, slotIndex, position, size)
 	local button = Instance.new("ImageButton")
 	button.Name = "ArtifactSlot" .. slotIndex
@@ -248,81 +247,15 @@ local function getNextCampCost(progression)
 	return CampConfig.LevelCosts[level + 1]
 end
 
-local function ownsArtifact(progression, artifactId)
-	local ownedArtifacts = progression and progression.OwnedArtifacts
-	if type(ownedArtifacts) ~= "table" then
-		return false
+local function getArtifactStateColor(stateLabel)
+	if stateLabel == "Equipped" then
+		return TEXT_SUCCESS
+	end
+	if stateLabel == "Owned" then
+		return TEXT_LIGHT
 	end
 
-	for _, ownedArtifactId in ipairs(ownedArtifacts) do
-		if ownedArtifactId == artifactId then
-			return true
-		end
-	end
-
-	return false
-end
-
-local function getArtifactDisplayName(artifactId)
-	local definition = ArtifactDefinitions[artifactId]
-	if definition then
-		return definition.DisplayName
-	end
-
-	return "Empty"
-end
-
-local function getArtifactDefinition(artifactId)
-	if type(artifactId) ~= "string" then
-		return nil
-	end
-
-	return ArtifactDefinitions[artifactId]
-end
-
-getArtifactIcon = function(definition)
-	if not definition or type(definition.IconAssetKey) ~= "string" then
-		return campAssets.camp_slot_artifact_empty_256x256
-	end
-
-	local assetId = campAssets[definition.IconAssetKey]
-	if type(assetId) == "string" then
-		return assetId
-	end
-
-	return campAssets.camp_slot_artifact_empty_256x256
-end
-
-local function getArtifactStateLabel(progression, artifactId)
-	if progression and progression.EquippedArtifactId == artifactId then
-		return "Equipped", TEXT_SUCCESS
-	end
-
-	if ownsArtifact(progression, artifactId) then
-		return "Owned", TEXT_LIGHT
-	end
-
-	return "Locked", TEXT_MUTED
-end
-
-local function formatArtifactEffect(definition)
-	if not definition then
-		return "Effect: None"
-	end
-
-	if definition.EffectType == "StatBonus" then
-		return string.format("Effect: %+g %s", definition.Value or 0, definition.StatKey or "Stat")
-	end
-
-	if definition.EffectType == "WeakExplosion" then
-		return string.format(
-			"Effect: %d%% explosion damage, %d stud radius",
-			math.floor(((definition.ExplosionDamageMultiplier or 0) * 100) + 0.5),
-			definition.ExplosionRadius or 0
-		)
-	end
-
-	return "Effect: " .. (definition.Description or "None")
+	return TEXT_MUTED
 end
 
 local function hideArtifactDetail(artifactId)
@@ -337,24 +270,24 @@ local function hideArtifactDetail(artifactId)
 end
 
 local function showArtifactDetail(artifactId)
-	local definition = getArtifactDefinition(artifactId)
+	local definition = ArtifactUtils.getDefinition(artifactId)
 	if not definition or not artifactDetailBox then
 		return
 	end
 
 	local progression = latestProgression or {}
-	local stateLabel, stateColor = getArtifactStateLabel(progression, artifactId)
+	local stateLabel = ArtifactUtils.getStateLabel(progression, artifactId)
 	previewedArtifactId = artifactId
 
 	artifactDetailTitle.Text = definition.DisplayName or artifactId
 	artifactDetailDescription.Text = definition.Description or "No description"
-	artifactDetailMeta.Text = string.format("State: %s\n%s", stateLabel, formatArtifactEffect(definition))
-	artifactDetailMeta.TextColor3 = stateColor
+	artifactDetailMeta.Text = string.format("State: %s\n%s", stateLabel, ArtifactUtils.formatEffect(definition))
+	artifactDetailMeta.TextColor3 = getArtifactStateColor(stateLabel)
 	artifactDetailBox.Visible = true
 end
 
 local function equipArtifact(artifactId)
-	if ownsArtifact(latestProgression, artifactId) then
+	if ArtifactUtils.owns(latestProgression, artifactId) then
 		Remotes.get(Remotes.Names.EquipArtifact):FireServer(artifactId)
 	end
 end
@@ -365,17 +298,6 @@ local function isTouchActivation(inputObject)
 	end
 
 	return UserInputService:GetLastInputType() == Enum.UserInputType.Touch
-end
-
-local function getOrderedOwnedArtifactIds(progression)
-	local ownedArtifactIds = {}
-	for _, artifactId in ipairs(ArtifactDefinitions.Order) do
-		if ownsArtifact(progression, artifactId) then
-			table.insert(ownedArtifactIds, artifactId)
-		end
-	end
-
-	return ownedArtifactIds
 end
 
 local function setArtifactSlotState(button, artifactId, progression)
@@ -395,7 +317,9 @@ local function setArtifactSlotState(button, artifactId, progression)
 
 	local icon = button:FindFirstChild("Icon")
 	if icon and icon:IsA("ImageLabel") then
-		icon.Image = filled and getArtifactIcon(definition) or campAssets.camp_slot_artifact_empty_256x256
+		icon.Image = filled
+			and ArtifactUtils.getIconAssetId(definition, campAssets, campAssets.camp_slot_artifact_empty_256x256)
+			or campAssets.camp_slot_artifact_empty_256x256
 		icon.ImageTransparency = filled and 0 or 1
 	end
 
@@ -481,9 +405,9 @@ local function connectArtifactSlot(button)
 end
 
 local function updateArtifactSlots(progression)
-	local orderedOwnedArtifactIds = getOrderedOwnedArtifactIds(progression)
+	local orderedOwnedArtifactIds = ArtifactUtils.getOrderedOwnedIds(progression)
 
-	if previewedArtifactId and not ownsArtifact(progression, previewedArtifactId) then
+	if previewedArtifactId and not ArtifactUtils.owns(progression, previewedArtifactId) then
 		hideArtifactDetail(previewedArtifactId)
 	end
 
