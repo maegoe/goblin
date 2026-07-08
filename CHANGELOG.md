@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-05
+
+### Changed
+
+- KAN-115: Refactored enemy/artifact code structure without intended behavior changes. Artifact ownership, ordered lookup, icon lookup, state labels, and effect text now live in `ArtifactUtils`; equipped artifact effect application and explosive-bolt payload composition now live in `ArtifactEffectService`; enemy sprite billboard/sprite-sheet handling now lives in `EnemyVisuals`; floating damage numbers now live in `DamageNumberService`.
+
+### Validation
+
+- KAN-115 local validation passed: `rojo build default.project.json -o build\game.rbxl` passed, and `git diff --check` passed with LF-to-CRLF working-copy warnings only. Static review confirmed PR #22/#23 merge gate was satisfied and KAN-114 artifact grid behavior was not rewritten. Roblox Studio runtime QA remains pending because Studio MCP was unavailable in this session.
+
 ## 2026-07-04
 
 ### Added

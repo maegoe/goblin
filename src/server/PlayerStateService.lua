@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
 local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local PlayerDefaults = require(Shared:WaitForChild("PlayerDefaults"))
 local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
@@ -13,6 +12,7 @@ local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
 local RunResultService = require(script.Parent:WaitForChild("RunResultService"))
 local FeedbackService = require(script.Parent:WaitForChild("FeedbackService"))
+local ArtifactEffectService = require(script.Parent:WaitForChild("ArtifactEffectService"))
 local EnemyService
 
 local PlayerStateService = {}
@@ -27,12 +27,6 @@ local LEVEL_UP_CHOICE_COUNT = 3
 local DEFAULT_RARITY = "common"
 local DEFAULT_RARITY_LABEL = "Common"
 local DEFAULT_RARITY_COLOR = { 190, 198, 210 }
--- KAN-101: two distinct explosion sources add this bonus, then clamp to these caps.
-local EXPLOSION_RADIUS_CAP = 18
-local EXPLOSION_DAMAGE_MULTIPLIER_CAP = 0.8
-local EXPLOSION_STACK_RADIUS_BONUS = 4
-local EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS = 0.15
-
 local function logState(player, message)
 	print(string.format("[goblin][PlayerState] %s: %s", player.Name, message))
 end
@@ -312,15 +306,6 @@ local function getPersistentStatBonus(snapshot, statKey)
 	return bonus
 end
 
-local function getEquippedArtifact(snapshot)
-	local artifactId = snapshot and snapshot.EquippedArtifactId
-	if type(artifactId) ~= "string" then
-		return nil, nil
-	end
-
-	return artifactId, ArtifactDefinitions[artifactId]
-end
-
 local function copyArray(values)
 	local result = {}
 	if type(values) ~= "table" then
@@ -334,80 +319,14 @@ local function copyArray(values)
 	return result
 end
 
-local function buildExplosionPayload(baseRadius, baseDamageMultiplier, sources)
-	local sourceCount = #sources
-	local amplified = sourceCount >= 2
-	local radius = baseRadius
-	local damageMultiplier = baseDamageMultiplier
-
-	if amplified then
-		radius += EXPLOSION_STACK_RADIUS_BONUS
-		damageMultiplier += EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS
-	end
-
-	return {
-		Radius = math.min(radius, EXPLOSION_RADIUS_CAP),
-		DamageMultiplier = math.min(damageMultiplier, EXPLOSION_DAMAGE_MULTIPLIER_CAP),
-		BaseRadius = baseRadius,
-		BaseDamageMultiplier = baseDamageMultiplier,
-		SourceCount = sourceCount,
-		Sources = sources,
-		Amplified = amplified,
-		RadiusCap = EXPLOSION_RADIUS_CAP,
-		DamageMultiplierCap = EXPLOSION_DAMAGE_MULTIPLIER_CAP,
-		StackRadiusBonus = EXPLOSION_STACK_RADIUS_BONUS,
-		StackDamageMultiplierBonus = EXPLOSION_STACK_DAMAGE_MULTIPLIER_BONUS,
-	}
-end
-
-local function combineExplosiveBolt(currentExplosion, nextExplosion)
-	if type(nextExplosion) ~= "table" then
-		return currentExplosion
-	end
-
-	local nextRadius = nextExplosion.Radius
-	local nextMultiplier = nextExplosion.DamageMultiplier
-	if not isFiniteNumber(nextRadius) or not isFiniteNumber(nextMultiplier) then
-		return currentExplosion
-	end
-	local nextSource = nextExplosion.Source or "Unknown"
-
-	if not currentExplosion then
-		return buildExplosionPayload(nextRadius, nextMultiplier, { nextSource })
-	end
-
-	local sources = copyArray(currentExplosion.Sources)
-	table.insert(sources, nextSource)
-	local baseRadius = math.max(currentExplosion.BaseRadius or currentExplosion.Radius or 0, nextRadius)
-	local baseDamageMultiplier = (currentExplosion.BaseDamageMultiplier or currentExplosion.DamageMultiplier or 0) + nextMultiplier
-
-	return buildExplosionPayload(baseRadius, baseDamageMultiplier, sources)
-end
-
 local function createState(player, runActive)
 	local progression = MetaProgressionService.getSnapshot(player)
 	local maxHealth = PlayerDefaults.MaxHealth + getPersistentStatBonus(progression, "MaxHealth")
 	local attackDamage = PlayerDefaults.AttackDamage + getPersistentStatBonus(progression, "AttackDamage")
-	local moveSpeed = PlayerDefaults.MoveSpeed
-	local equippedArtifactId, equippedArtifact = getEquippedArtifact(progression)
-	local explosiveBolt = nil
-
-	if equippedArtifact then
-		if equippedArtifact.EffectType == "StatBonus" and equippedArtifact.StatKey == "MoveSpeed" and isFiniteNumber(equippedArtifact.Value) then
-			moveSpeed += equippedArtifact.Value
-		elseif equippedArtifact.EffectType == "WeakExplosion" then
-			explosiveBolt = combineExplosiveBolt(explosiveBolt, {
-				Radius = equippedArtifact.ExplosionRadius,
-				DamageMultiplier = equippedArtifact.ExplosionDamageMultiplier,
-				Source = equippedArtifact.Id or equippedArtifactId or "Artifact",
-			})
-		end
-	end
-
-	return {
+	local state = {
 		MaxHealth = maxHealth,
 		Health = maxHealth,
-		MoveSpeed = moveSpeed,
+		MoveSpeed = PlayerDefaults.MoveSpeed,
 		AttackDamage = attackDamage,
 		AttackInterval = PlayerDefaults.AttackInterval,
 		AttackRange = PlayerDefaults.AttackRange,
@@ -421,10 +340,13 @@ local function createState(player, runActive)
 		RunActive = runActive == true,
 		PendingChoices = nil,
 		Upgrades = {},
-		EquippedArtifactId = equippedArtifactId,
-		ExplosiveBolt = explosiveBolt,
+		EquippedArtifactId = nil,
+		ExplosiveBolt = nil,
 		ActiveCharacter = nil,
 	}
+	ArtifactEffectService.applyEquippedArtifact(state, progression)
+
+	return state
 end
 
 local function processLevelUps(player, state)
@@ -503,8 +425,8 @@ function PlayerStateService.publish(player)
 			stackDamageMultiplierBonus = state.ExplosiveBolt.StackDamageMultiplierBonus,
 		} or {
 			enabled = false,
-			radiusCap = EXPLOSION_RADIUS_CAP,
-			damageMultiplierCap = EXPLOSION_DAMAGE_MULTIPLIER_CAP,
+			radiusCap = ArtifactEffectService.ExplosionRadiusCap,
+			damageMultiplierCap = ArtifactEffectService.ExplosionDamageMultiplierCap,
 		},
 	})
 end
@@ -677,7 +599,7 @@ local function applyUpgradeDefinition(state, definition, value)
 		end
 
 		state.Upgrades[definition.Id] = currentStacks + 1
-		state.ExplosiveBolt = combineExplosiveBolt(state.ExplosiveBolt, {
+		state.ExplosiveBolt = ArtifactEffectService.combineExplosiveBolt(state.ExplosiveBolt, {
 			Radius = definition.ExplosionRadius,
 			DamageMultiplier = definition.ExplosionDamageMultiplier,
 			Source = definition.Id or "ExplosiveBolt",

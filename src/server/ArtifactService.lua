@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
+local ArtifactUtils = require(Shared:WaitForChild("ArtifactUtils"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressionService"))
@@ -10,21 +11,6 @@ local ArtifactService = {}
 
 local equipRemote
 local unequipRemote
-
-local function ownsArtifact(snapshot, artifactId)
-	local ownedArtifacts = snapshot and snapshot.OwnedArtifacts
-	if type(ownedArtifacts) ~= "table" then
-		return false
-	end
-
-	for _, ownedArtifactId in ipairs(ownedArtifacts) do
-		if ownedArtifactId == artifactId then
-			return true
-		end
-	end
-
-	return false
-end
 
 function ArtifactService.equip(player, artifactId)
 	local definition = ArtifactDefinitions[artifactId]
@@ -36,12 +22,12 @@ function ArtifactService.equip(player, artifactId)
 	if not snapshot then
 		return false, "NoProgression"
 	end
-	if not ownsArtifact(snapshot, artifactId) then
+	if not ArtifactUtils.owns(snapshot, artifactId) then
 		return false, "NotOwned"
 	end
 
 	local saved = MetaProgressionService.update(player, function(progression)
-		if not ownsArtifact(progression, artifactId) then
+		if not ArtifactUtils.owns(progression, artifactId) then
 			return false
 		end
 
