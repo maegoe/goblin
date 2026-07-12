@@ -1,12 +1,16 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 
 local EnemyService = require(script.Parent:WaitForChild("EnemyService"))
 local ExperienceService = require(script.Parent:WaitForChild("ExperienceService"))
+local FeedbackService = require(script.Parent:WaitForChild("FeedbackService"))
 local PlayerStateService = require(script.Parent:WaitForChild("PlayerStateService"))
 
 local CombatService = {}
@@ -14,6 +18,76 @@ local CombatService = {}
 local projectileFolder
 local attackTimers = {}
 local projectiles = {}
+
+local function setExplosionSpriteFrame(sprite, spriteConfig, frameIndex)
+	local frameSize = spriteConfig.FrameSize
+	local columns = spriteConfig.Columns or spriteConfig.FrameCount or 1
+	local column = frameIndex % columns
+	local row = math.floor(frameIndex / columns)
+
+	sprite.ImageRectSize = frameSize
+	sprite.ImageRectOffset = Vector2.new(frameSize.X * column, frameSize.Y * row)
+end
+
+local function playExplosionSprite(sprite, spriteConfig, duration)
+	local frameCount = spriteConfig.FrameCount or 1
+	local startedAt = os.clock()
+
+	setExplosionSpriteFrame(sprite, spriteConfig, 0)
+	task.spawn(function()
+		while sprite.Parent do
+			local progress = 1
+			if duration > 0 then
+				progress = math.clamp((os.clock() - startedAt) / duration, 0, 1)
+			end
+
+			local frameIndex = math.min(frameCount - 1, math.floor(progress * frameCount))
+			setExplosionSpriteFrame(sprite, spriteConfig, frameIndex)
+
+			if progress >= 1 then
+				break
+			end
+
+			RunService.Heartbeat:Wait()
+		end
+	end)
+end
+
+local function createExplosionSpriteSurface(feedback, spriteConfig)
+	if not spriteConfig or not spriteConfig.Image or not spriteConfig.FrameSize then
+		return nil
+	end
+
+	local surface = Instance.new("SurfaceGui")
+	surface.Name = "ExplosionSpriteSurface"
+	surface.Face = Enum.NormalId.Top
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.PixelsPerStud = 32
+	surface.Parent = feedback
+
+	local sprite = Instance.new("ImageLabel")
+	sprite.Name = "ExplosionSprite"
+	sprite.BackgroundTransparency = 1
+	sprite.Image = spriteConfig.Image
+	sprite.ImageTransparency = 0.05
+	sprite.ScaleType = Enum.ScaleType.Fit
+	sprite.Size = UDim2.fromScale(1, 1)
+	sprite.Parent = surface
+	setExplosionSpriteFrame(sprite, spriteConfig, 0)
+
+	return sprite
+end
+
+local function createExplosionImageFallback(feedback)
+	local decal = Instance.new("Decal")
+	decal.Name = "ExplosionImage"
+	decal.Face = Enum.NormalId.Top
+	decal.Texture = WeaponDefinitions.BasicBolt.ExplosionFeedbackImage
+	decal.Transparency = 0.05
+	decal.Parent = feedback
+
+	return decal
+end
 
 local function getProjectileFolder()
 	if projectileFolder then
@@ -28,6 +102,72 @@ local function getProjectileFolder()
 	end
 
 	return projectileFolder
+end
+
+local function createExplosionFeedback(position, radius, amplified)
+	local feedback = Instance.new("Part")
+	feedback.Name = amplified and "AmplifiedExplosionFeedback" or "ExplosionFeedback"
+	feedback.Anchored = true
+	feedback.CanCollide = false
+	feedback.CanQuery = false
+	feedback.CanTouch = false
+	feedback.Material = Enum.Material.SmoothPlastic
+	feedback.Color = amplified and Color3.fromRGB(255, 128, 56) or Color3.fromRGB(255, 196, 64)
+	feedback.Transparency = 1
+	feedback.CastShadow = false
+	feedback.Size = Vector3.new(radius * 0.25, 0.1, radius * 0.25)
+	feedback.Position = position + Vector3.new(0, 0.15, 0)
+	feedback.Parent = getProjectileFolder()
+
+	local sprite = createExplosionSpriteSurface(feedback, WeaponDefinitions.BasicBolt.ExplosionFeedbackSprite)
+	if sprite and amplified then
+		sprite.ImageColor3 = Color3.fromRGB(255, 170, 90)
+		sprite.ImageTransparency = 0
+	end
+	local fallbackDecal = nil
+	if not sprite then
+		fallbackDecal = createExplosionImageFallback(feedback)
+		if amplified then
+			fallbackDecal.Color3 = Color3.fromRGB(255, 170, 90)
+			fallbackDecal.Transparency = 0
+		end
+	end
+
+	local duration = WeaponDefinitions.BasicBolt.ExplosionFeedbackDuration
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(feedback, tweenInfo, {
+		Size = Vector3.new(radius * 2, 0.1, radius * 2),
+		Transparency = 1,
+	}):Play()
+	if sprite then
+		playExplosionSprite(sprite, WeaponDefinitions.BasicBolt.ExplosionFeedbackSprite, duration)
+		TweenService:Create(sprite, tweenInfo, {
+			ImageTransparency = 1,
+		}):Play()
+	else
+		TweenService:Create(fallbackDecal, tweenInfo, {
+			Transparency = 1,
+		}):Play()
+	end
+
+	Debris:AddItem(feedback, duration + 0.1)
+end
+
+local function applyExplosion(player, position, directHitEnemy, directDamage)
+	local state = PlayerStateService.getState(player)
+	local explosion = state and state.ExplosiveBolt
+	if not explosion then
+		return
+	end
+
+	local damage = math.max(1, math.floor((directDamage * explosion.DamageMultiplier) + 0.5))
+	for _, enemy in ipairs(EnemyService.getEnemiesInRadius(position, explosion.Radius, directHitEnemy)) do
+		local killInfo = EnemyService.damage(enemy, damage)
+		FeedbackService.play(player, killInfo and FeedbackEvents.EnemyDeath or FeedbackEvents.EnemyHit)
+		ExperienceService.awardKill(player, killInfo)
+	end
+
+	createExplosionFeedback(position, explosion.Radius, explosion.Amplified == true)
 end
 
 local function createProjectile(player, target, damage, speed)
@@ -74,8 +214,11 @@ local function updateProjectiles(deltaTime)
 		local direction = targetPosition - projectile.Position
 
 		if direction.Magnitude <= 2.5 then
+			local impactPosition = data.Target.Position
 			local killInfo = EnemyService.damage(data.Target, data.Damage)
+			FeedbackService.play(data.Owner, killInfo and FeedbackEvents.EnemyDeath or FeedbackEvents.EnemyHit)
 			ExperienceService.awardKill(data.Owner, killInfo)
+			applyExplosion(data.Owner, impactPosition, data.Target, data.Damage)
 			projectiles[projectile] = nil
 			projectile:Destroy()
 			continue

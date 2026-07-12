@@ -9,6 +9,12 @@
         "$path": "src/shared"
       }
     },
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$properties": {
+        "ScreenOrientation": "LandscapeSensor"
+      }
+    },
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "Server": {

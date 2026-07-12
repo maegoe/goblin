@@ -1,0 +1,15 @@
+#:schema https://raw.githubusercontent.com/jackTabsCode/asphalt/refs/heads/main/schema.json
+
+[creator]
+type = "group"
+id = 738487850
+
+[codegen]
+style = "nested"
+strip_extensions = true
+content = false
+
+[inputs.AudioAssets]
+path = "assets/audio/**/*"
+output_path = "src/shared"
+bleed = false

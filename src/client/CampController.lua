@@ -1,0 +1,701 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
+local ArtifactUtils = require(Shared:WaitForChild("ArtifactUtils"))
+local Assets = require(Shared:WaitForChild("Assets"))
+local CampConfig = require(Shared:WaitForChild("CampConfig"))
+local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+
+local CampController = {}
+
+local localPlayer = Players.LocalPlayer
+local campAssets = Assets.v0_4.camp_ui
+local gui
+local root
+local resourcesText
+local campLevelText
+local runReadinessText
+local campActionStatusText
+local healthUpgradeText
+local healthCostText
+local healthMaxBadge
+local attackUpgradeText
+local attackCostText
+local attackMaxBadge
+local appearanceBadge
+local appearanceText
+local campButton
+local healthButton
+local attackButton
+local artifactSlotButtons = {}
+local artifactSlotArtifactIds = {}
+local previewedArtifactId = nil
+local artifactDetailBox
+local artifactDetailTitle
+local artifactDetailDescription
+local artifactDetailMeta
+local unequipArtifactButton
+local latestProgression = nil
+local latestAppearanceStage = nil
+
+local TEXT_LIGHT = Color3.fromRGB(238, 231, 204)
+local TEXT_MUTED = Color3.fromRGB(157, 168, 129)
+local TEXT_SUCCESS = Color3.fromRGB(143, 226, 163)
+local TEXT_WARNING = Color3.fromRGB(230, 168, 92)
+local BOX_BACKGROUND = Color3.fromRGB(18, 23, 17)
+local BOX_BACKGROUND_DARK = Color3.fromRGB(7, 10, 8)
+local BOX_STROKE = Color3.fromRGB(112, 122, 82)
+local BOX_STROKE_DIM = Color3.fromRGB(71, 79, 57)
+local ARTIFACT_SLOT_COUNT = 12
+local ARTIFACT_GRID_COLUMNS = 4
+local ARTIFACT_LONG_PRESS_SECONDS = 0.45
+local ARTIFACT_DOUBLE_TAP_SECONDS = 0.35
+
+local function addTextConstraint(label, minSize, maxSize)
+	label.TextScaled = true
+
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MinTextSize = minSize
+	constraint.MaxTextSize = maxSize
+	constraint.Parent = label
+end
+
+local function createImage(parent, name, image, position, size)
+	local item = Instance.new("ImageLabel")
+	item.Name = name
+	item.BackgroundTransparency = 1
+	item.Image = image
+	item.Position = position
+	item.Size = size
+	item.ScaleType = Enum.ScaleType.Stretch
+	item.Parent = parent
+	return item
+end
+
+local function createPanelBox(parent, name, position, size, transparency)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.BackgroundColor3 = BOX_BACKGROUND
+	frame.BackgroundTransparency = transparency or 0.08
+	frame.BorderSizePixel = 0
+	frame.Position = position
+	frame.Size = size
+	frame.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = frame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE
+	stroke.Thickness = 1
+	stroke.Transparency = 0.24
+	stroke.Parent = frame
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(31, 38, 27)),
+		ColorSequenceKeypoint.new(1, BOX_BACKGROUND_DARK),
+	})
+	gradient.Rotation = 90
+	gradient.Parent = frame
+
+	return frame
+end
+
+local function createText(parent, name, text, position, size, textSize)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.Text = text
+	label.TextColor3 = TEXT_LIGHT
+	label.TextSize = textSize
+	label.TextWrapped = true
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.Position = position
+	label.Size = size
+	label.Parent = parent
+	addTextConstraint(label, 9, textSize)
+	return label
+end
+
+local function createBadge(parent, name, text, position, size, color)
+	local badge = Instance.new("TextLabel")
+	badge.Name = name
+	badge.BackgroundColor3 = color
+	badge.BackgroundTransparency = 0.12
+	badge.BorderSizePixel = 0
+	badge.Font = Enum.Font.GothamBold
+	badge.Text = text
+	badge.TextColor3 = Color3.fromRGB(255, 255, 255)
+	badge.TextWrapped = true
+	badge.TextXAlignment = Enum.TextXAlignment.Center
+	badge.TextYAlignment = Enum.TextYAlignment.Center
+	badge.Position = position
+	badge.Size = size
+	badge.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = badge
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE_DIM
+	stroke.Thickness = 1
+	stroke.Transparency = 0.36
+	stroke.Parent = badge
+
+	addTextConstraint(badge, 9, 14)
+	return badge
+end
+
+local function createImageButton(parent, name, image, position, size, text, maxTextSize)
+	local button = Instance.new("ImageButton")
+	button.Name = name
+	button.BackgroundTransparency = 1
+	button.Image = image
+	button.Position = position
+	button.Size = size
+	button.ScaleType = Enum.ScaleType.Stretch
+	button.AutoButtonColor = false
+	button.Parent = parent
+
+	local label = createText(button, "Label", text, UDim2.fromScale(0.08, 0.16), UDim2.fromScale(0.84, 0.68), maxTextSize or 18)
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.TextYAlignment = Enum.TextYAlignment.Center
+
+	return button
+end
+
+local function createArtifactSlot(parent, slotIndex, position, size)
+	local button = Instance.new("ImageButton")
+	button.Name = "ArtifactSlot" .. slotIndex
+	button.BackgroundTransparency = 1
+	button.Image = campAssets.camp_slot_artifact_empty_256x256
+	button.Position = position
+	button.Size = size
+	button.ScaleType = Enum.ScaleType.Fit
+	button.AutoButtonColor = false
+	button.Parent = parent
+
+	local icon = createImage(button, "Icon", campAssets.camp_slot_artifact_empty_256x256, UDim2.fromScale(0.18, 0.18), UDim2.fromScale(0.64, 0.64))
+	icon.ScaleType = Enum.ScaleType.Fit
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = BOX_STROKE_DIM
+	stroke.Thickness = 1
+	stroke.Transparency = 0.35
+	stroke.Parent = button
+
+	return button
+end
+
+local function setButtonText(button, text)
+	local label = button and button:FindFirstChild("Label")
+	if label and label:IsA("TextLabel") then
+		label.Text = text
+	end
+end
+
+local function setSecondaryButtonEnabled(button, enabled, enabledText, disabledText)
+	if not button then
+		return
+	end
+
+	button.Active = enabled
+	button.Image = enabled and campAssets.camp_button_secondary_default_512x128 or campAssets.camp_button_secondary_disabled_512x128
+	setButtonText(button, enabled and enabledText or disabledText)
+end
+
+local function getUpgradeLevel(progression, upgradeId)
+	local upgrades = progression and progression.PersistentUpgrades
+	if type(upgrades) ~= "table" or type(upgrades[upgradeId]) ~= "number" then
+		return 0
+	end
+
+	return math.max(0, math.floor(upgrades[upgradeId]))
+end
+
+local function getNextUpgradeCost(progression, upgradeId)
+	local definition = PersistentUpgradeDefinitions[upgradeId]
+	local level = getUpgradeLevel(progression, upgradeId)
+	if not definition or level >= definition.MaxLevel then
+		return nil, "MaxLevel", definition and definition.MaxLevel or 0
+	end
+
+	local campCap = PersistentUpgradeDefinitions.getCampLevelCap(progression and progression.CampLevel)
+	if level >= campCap then
+		return nil, "CampLevelCap", campCap
+	end
+
+	return definition.Costs[level + 1], nil, campCap
+end
+
+local function getNextCampCost(progression)
+	local level = math.max(0, math.floor((progression and progression.CampLevel) or 0))
+	if level >= CampConfig.MaxLevel then
+		return nil
+	end
+
+	return CampConfig.LevelCosts[level + 1]
+end
+
+local function getArtifactStateColor(stateLabel)
+	if stateLabel == "Equipped" then
+		return TEXT_SUCCESS
+	end
+	if stateLabel == "Owned" then
+		return TEXT_LIGHT
+	end
+
+	return TEXT_MUTED
+end
+
+local function hideArtifactDetail(artifactId)
+	if artifactId and previewedArtifactId ~= artifactId then
+		return
+	end
+
+	previewedArtifactId = nil
+	if artifactDetailBox then
+		artifactDetailBox.Visible = false
+	end
+end
+
+local function showArtifactDetail(artifactId)
+	local definition = ArtifactUtils.getDefinition(artifactId)
+	if not definition or not artifactDetailBox then
+		return
+	end
+
+	local progression = latestProgression or {}
+	local stateLabel = ArtifactUtils.getStateLabel(progression, artifactId)
+	previewedArtifactId = artifactId
+
+	artifactDetailTitle.Text = definition.DisplayName or artifactId
+	artifactDetailDescription.Text = definition.Description or "No description"
+	artifactDetailMeta.Text = string.format("State: %s\n%s", stateLabel, ArtifactUtils.formatEffect(definition))
+	artifactDetailMeta.TextColor3 = getArtifactStateColor(stateLabel)
+	artifactDetailBox.Visible = true
+end
+
+local function equipArtifact(artifactId)
+	if ArtifactUtils.owns(latestProgression, artifactId) then
+		Remotes.get(Remotes.Names.EquipArtifact):FireServer(artifactId)
+	end
+end
+
+local function isTouchActivation(inputObject)
+	if inputObject and inputObject.UserInputType == Enum.UserInputType.Touch then
+		return true
+	end
+
+	return UserInputService:GetLastInputType() == Enum.UserInputType.Touch
+end
+
+local function setArtifactSlotState(button, artifactId, progression)
+	if not button then
+		return
+	end
+
+	local definition = ArtifactDefinitions[artifactId]
+	local filled = definition ~= nil
+	local equipped = filled and progression and progression.EquippedArtifactId == artifactId
+
+	artifactSlotArtifactIds[button] = filled and artifactId or nil
+	button.Active = filled
+	button.Selectable = filled
+	button.Image = equipped and campAssets.camp_slot_artifact_equipped_256x256 or campAssets.camp_slot_artifact_empty_256x256
+	button.ImageTransparency = filled and 0 or 0.18
+
+	local icon = button:FindFirstChild("Icon")
+	if icon and icon:IsA("ImageLabel") then
+		icon.Image = filled
+			and ArtifactUtils.getIconAssetId(definition, campAssets, campAssets.camp_slot_artifact_empty_256x256)
+			or campAssets.camp_slot_artifact_empty_256x256
+		icon.ImageTransparency = filled and 0 or 1
+	end
+
+	local stroke = button:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = equipped and TEXT_SUCCESS or BOX_STROKE_DIM
+		stroke.Transparency = filled and 0.2 or 0.55
+	end
+end
+
+local function connectArtifactSlot(button)
+	local touchHoldToken = 0
+	local lastTouchTapAt = 0
+
+	button.MouseEnter:Connect(function()
+		local artifactId = artifactSlotArtifactIds[button]
+		if artifactId then
+			showArtifactDetail(artifactId)
+		end
+	end)
+
+	button.MouseLeave:Connect(function()
+		hideArtifactDetail(artifactSlotArtifactIds[button])
+	end)
+
+	button.SelectionGained:Connect(function()
+		local artifactId = artifactSlotArtifactIds[button]
+		if artifactId then
+			showArtifactDetail(artifactId)
+		end
+	end)
+
+	button.SelectionLost:Connect(function()
+		hideArtifactDetail(artifactSlotArtifactIds[button])
+	end)
+
+	button.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+
+		local artifactId = artifactSlotArtifactIds[button]
+		if not artifactId then
+			return
+		end
+
+		touchHoldToken += 1
+		local token = touchHoldToken
+		task.delay(ARTIFACT_LONG_PRESS_SECONDS, function()
+			if touchHoldToken == token and artifactSlotArtifactIds[button] == artifactId then
+				showArtifactDetail(artifactId)
+			end
+		end)
+	end)
+
+	button.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			touchHoldToken += 1
+		end
+	end)
+
+	button.Activated:Connect(function(inputObject)
+		local artifactId = artifactSlotArtifactIds[button]
+		if not artifactId then
+			return
+		end
+
+		if isTouchActivation(inputObject) then
+			local now = os.clock()
+			if now - lastTouchTapAt <= ARTIFACT_DOUBLE_TAP_SECONDS then
+				showArtifactDetail(artifactId)
+				equipArtifact(artifactId)
+				lastTouchTapAt = 0
+			else
+				lastTouchTapAt = now
+			end
+			return
+		end
+
+		showArtifactDetail(artifactId)
+		equipArtifact(artifactId)
+	end)
+end
+
+local function updateArtifactSlots(progression)
+	local orderedOwnedArtifactIds = ArtifactUtils.getOrderedOwnedIds(progression)
+
+	if previewedArtifactId and not ArtifactUtils.owns(progression, previewedArtifactId) then
+		hideArtifactDetail(previewedArtifactId)
+	end
+
+	for slotIndex, button in ipairs(artifactSlotButtons) do
+		setArtifactSlotState(button, orderedOwnedArtifactIds[slotIndex], progression)
+	end
+end
+
+local function updateUpgradeCard(upgradeId, level, cost, blockedReason, campCap, resourceAmount, textLabel, costLabel, button, maxBadge)
+	local definition = PersistentUpgradeDefinitions[upgradeId]
+	local maxLevel = math.min(definition.MaxLevel, campCap or definition.MaxLevel)
+	local displayName = upgradeId == "MaxHealth" and "Max Health" or "Attack"
+
+	textLabel.Text = string.format("%s\nLevel %d / %d", displayName, level, maxLevel)
+
+	if cost then
+		local canBuy = resourceAmount >= cost
+		costLabel.Text = string.format("Next: %d Growth Stones\nOwned: %d", cost, resourceAmount)
+		costLabel.TextColor3 = canBuy and TEXT_LIGHT or TEXT_WARNING
+		button.Visible = true
+		maxBadge.Visible = false
+		setSecondaryButtonEnabled(button, canBuy, "Buy", "Need Stones")
+	elseif blockedReason == "CampLevelCap" then
+		costLabel.Text = string.format("Camp cap: level %d\nUpgrade camp to unlock more.", maxLevel)
+		costLabel.TextColor3 = TEXT_WARNING
+		button.Visible = true
+		maxBadge.Visible = false
+		setSecondaryButtonEnabled(button, false, "Buy", "Camp Cap")
+	else
+		costLabel.Text = string.format("Complete\nLevel %d / %d", level, maxLevel)
+		costLabel.TextColor3 = TEXT_SUCCESS
+		button.Visible = false
+		maxBadge.Visible = true
+	end
+end
+
+local function updateCamp()
+	local progression = latestProgression or {}
+	local appearanceStage = latestAppearanceStage or {}
+	local growthStones = progression.GrowthStones or 0
+	local campMaterials = progression.CampMaterials or 0
+	local campLevel = progression.CampLevel or 0
+	local healthLevel = getUpgradeLevel(progression, "MaxHealth")
+	local attackLevel = getUpgradeLevel(progression, "AttackDamage")
+	local healthCost, healthBlockedReason, healthCampCap = getNextUpgradeCost(progression, "MaxHealth")
+	local attackCost, attackBlockedReason, attackCampCap = getNextUpgradeCost(progression, "AttackDamage")
+	local campCost = getNextCampCost(progression)
+
+	resourcesText.Text = string.format("Growth Stones  %d\nCamp Materials  %d", growthStones, campMaterials)
+	campLevelText.Text = string.format("Camp Level %d / %d", campLevel, CampConfig.MaxLevel)
+	if appearanceText then
+		appearanceText.Text = string.format(
+			"Goblin Level %d\n%s",
+			appearanceStage.Level or appearanceStage.Stage or 0,
+			appearanceStage.DisplayName or "Sprout Goblin"
+		)
+	end
+	if appearanceBadge and type(appearanceStage.BadgeAssetId) == "string" then
+		appearanceBadge.Image = appearanceStage.BadgeAssetId
+	end
+
+	updateUpgradeCard(
+		"MaxHealth",
+		healthLevel,
+		healthCost,
+		healthBlockedReason,
+		healthCampCap,
+		growthStones,
+		healthUpgradeText,
+		healthCostText,
+		healthButton,
+		healthMaxBadge
+	)
+	updateUpgradeCard(
+		"AttackDamage",
+		attackLevel,
+		attackCost,
+		attackBlockedReason,
+		attackCampCap,
+		growthStones,
+		attackUpgradeText,
+		attackCostText,
+		attackButton,
+		attackMaxBadge
+	)
+
+	if previewedArtifactId and not ArtifactDefinitions[previewedArtifactId] then
+		hideArtifactDetail(previewedArtifactId)
+	end
+	updateArtifactSlots(progression)
+	if previewedArtifactId then
+		showArtifactDetail(previewedArtifactId)
+	end
+	if unequipArtifactButton then
+		local canUnequip = progression.EquippedArtifactId ~= nil
+		setSecondaryButtonEnabled(unequipArtifactButton, canUnequip, "Unequip", "No Artifact")
+	end
+
+	if campCost then
+		local canUpgradeCamp = campMaterials >= campCost
+		campActionStatusText.Text = string.format("Next camp upgrade costs %d materials.", campCost)
+		campActionStatusText.TextColor3 = canUpgradeCamp and TEXT_LIGHT or TEXT_WARNING
+		setSecondaryButtonEnabled(campButton, canUpgradeCamp, "Upgrade Camp", "Need Materials")
+	else
+		campActionStatusText.Text = "Camp is fully upgraded."
+		campActionStatusText.TextColor3 = TEXT_SUCCESS
+		setSecondaryButtonEnabled(campButton, false, "Upgrade Camp", "Max Camp")
+	end
+
+	runReadinessText.Text = "Ready for your next run.\nSpend available upgrades first, then start."
+end
+
+local function setOtherUiVisible(hudVisible, hideResult)
+	local playerGui = localPlayer:FindFirstChild("PlayerGui")
+	if not playerGui then
+		return
+	end
+
+	local hud = playerGui:FindFirstChild("GoblinHud")
+	if hud then
+		hud.Enabled = hudVisible
+	end
+
+	local result = playerGui:FindFirstChild("GoblinRunResult")
+	if result and hideResult then
+		result.Enabled = false
+	end
+end
+
+local function showCamp(keepResultVisible)
+	if gui then
+		gui.Enabled = true
+	end
+	setOtherUiVisible(false, keepResultVisible ~= true)
+end
+
+local function hideCamp()
+	if gui then
+		gui.Enabled = false
+	end
+	setOtherUiVisible(true, true)
+end
+
+local function buildCamp()
+	local playerGui = localPlayer:WaitForChild("PlayerGui")
+	gui = Instance.new("ScreenGui")
+	gui.Name = "GoblinCamp"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.Parent = playerGui
+
+	root = Instance.new("Frame")
+	root.Name = "Root"
+	root.BackgroundColor3 = Color3.fromRGB(8, 11, 8)
+	root.BorderSizePixel = 0
+	root.Size = UDim2.fromScale(1, 1)
+	root.Parent = gui
+
+	local background = createImage(root, "Background", campAssets.camp_hub_background_default_960x720, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
+	background.ScaleType = Enum.ScaleType.Crop
+
+	local panel = createPanelBox(root, "MainBoard", UDim2.fromScale(0.045, 0.055), UDim2.fromScale(0.63, 0.88), 0.16)
+	createText(panel, "Title", "Goblin Camp", UDim2.fromScale(0.08, 0.085), UDim2.fromScale(0.34, 0.07), 26)
+
+	appearanceBadge = createImage(panel, "GrowthLevelBadge", campAssets.badge_goblin_growth_0_256x256, UDim2.fromScale(0.82, 0.07), UDim2.fromScale(0.09, 0.12))
+	appearanceText = createText(panel, "GrowthLevelText", "", UDim2.fromScale(0.55, 0.075), UDim2.fromScale(0.24, 0.1), 13)
+	appearanceText.TextXAlignment = Enum.TextXAlignment.Right
+
+	local infoBoard = createPanelBox(panel, "TopInfoBoard", UDim2.fromScale(0.08, 0.19), UDim2.fromScale(0.84, 0.13), 0.1)
+
+	createImage(infoBoard, "GrowthStoneIcon", campAssets.icon_growth_stone_default_256x256, UDim2.fromScale(0.04, 0.18), UDim2.fromScale(0.08, 0.56))
+	createImage(infoBoard, "CampMaterialIcon", campAssets.icon_camp_material_default_256x256, UDim2.fromScale(0.33, 0.18), UDim2.fromScale(0.08, 0.56))
+	resourcesText = createText(infoBoard, "Resources", "", UDim2.fromScale(0.13, 0.12), UDim2.fromScale(0.38, 0.76), 14)
+	campLevelText = createText(infoBoard, "CampLevel", "", UDim2.fromScale(0.56, 0.18), UDim2.fromScale(0.35, 0.6), 15)
+	campLevelText.TextXAlignment = Enum.TextXAlignment.Right
+
+	local healthCard = createPanelBox(panel, "HealthCard", UDim2.fromScale(0.08, 0.37), UDim2.fromScale(0.4, 0.22), 0.08)
+	createImage(healthCard, "Icon", campAssets.icon_upgrade_health_default_256x256, UDim2.fromScale(0.06, 0.18), UDim2.fromScale(0.16, 0.44))
+	healthUpgradeText = createText(healthCard, "Title", "", UDim2.fromScale(0.26, 0.11), UDim2.fromScale(0.56, 0.32), 15)
+	healthCostText = createText(healthCard, "Status", "", UDim2.fromScale(0.26, 0.45), UDim2.fromScale(0.62, 0.24), 12)
+	healthButton = createImageButton(healthCard, "BuyHealth", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.74), UDim2.fromScale(0.46, 0.19), "Buy", 14)
+	healthMaxBadge = createBadge(healthCard, "MaxBadge", "MAX", UDim2.fromScale(0.76, 0.72), UDim2.fromScale(0.18, 0.18), Color3.fromRGB(75, 125, 69))
+	healthMaxBadge.Visible = false
+	healthButton.Activated:Connect(function()
+		if healthButton.Visible and healthButton.Active then
+			Remotes.get(Remotes.Names.PurchasePersistentUpgrade):FireServer("MaxHealth")
+		end
+	end)
+
+	local attackCard = createPanelBox(panel, "AttackCard", UDim2.fromScale(0.52, 0.37), UDim2.fromScale(0.4, 0.22), 0.08)
+	createImage(attackCard, "Icon", campAssets.icon_upgrade_attack_default_256x256, UDim2.fromScale(0.06, 0.18), UDim2.fromScale(0.16, 0.44))
+	attackUpgradeText = createText(attackCard, "Title", "", UDim2.fromScale(0.26, 0.11), UDim2.fromScale(0.56, 0.32), 15)
+	attackCostText = createText(attackCard, "Status", "", UDim2.fromScale(0.26, 0.45), UDim2.fromScale(0.62, 0.24), 12)
+	attackButton = createImageButton(attackCard, "BuyAttack", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.29, 0.74), UDim2.fromScale(0.46, 0.19), "Buy", 14)
+	attackMaxBadge = createBadge(attackCard, "MaxBadge", "MAX", UDim2.fromScale(0.76, 0.72), UDim2.fromScale(0.18, 0.18), Color3.fromRGB(75, 125, 69))
+	attackMaxBadge.Visible = false
+	attackButton.Activated:Connect(function()
+		if attackButton.Visible and attackButton.Active then
+			Remotes.get(Remotes.Names.PurchasePersistentUpgrade):FireServer("AttackDamage")
+		end
+	end)
+
+	local artifactCard = createPanelBox(panel, "ArtifactBoard", UDim2.fromScale(0.08, 0.605), UDim2.fromScale(0.84, 0.315), 0.08)
+	createText(artifactCard, "Title", "Artifacts", UDim2.fromScale(0.05, 0.04), UDim2.fromScale(0.38, 0.1), 13)
+
+	artifactSlotButtons = {}
+	artifactSlotArtifactIds = {}
+	local slotWidth = 0.095
+	local slotHeight = 0.25
+	local slotGapX = 0.025
+	local slotGapY = 0.025
+	local gridX = 0.05
+	local gridY = 0.17
+	for slotIndex = 1, ARTIFACT_SLOT_COUNT do
+		local column = (slotIndex - 1) % ARTIFACT_GRID_COLUMNS
+		local row = math.floor((slotIndex - 1) / ARTIFACT_GRID_COLUMNS)
+		local slot = createArtifactSlot(
+			artifactCard,
+			slotIndex,
+			UDim2.fromScale(gridX + (column * (slotWidth + slotGapX)), gridY + (row * (slotHeight + slotGapY))),
+			UDim2.fromScale(slotWidth, slotHeight)
+		)
+		artifactSlotButtons[slotIndex] = slot
+		connectArtifactSlot(slot)
+	end
+
+	artifactDetailBox = createPanelBox(artifactCard, "ArtifactDetail", UDim2.fromScale(0.54, 0.13), UDim2.fromScale(0.41, 0.7), 0.05)
+	artifactDetailBox.Visible = false
+	artifactDetailTitle = createText(artifactDetailBox, "Title", "", UDim2.fromScale(0.08, 0.06), UDim2.fromScale(0.84, 0.17), 12)
+	artifactDetailDescription = createText(artifactDetailBox, "Description", "", UDim2.fromScale(0.08, 0.27), UDim2.fromScale(0.84, 0.35), 10)
+	artifactDetailDescription.TextColor3 = TEXT_MUTED
+	artifactDetailMeta = createText(artifactDetailBox, "Meta", "", UDim2.fromScale(0.08, 0.65), UDim2.fromScale(0.84, 0.29), 10)
+
+	unequipArtifactButton = createImageButton(artifactCard, "UnequipArtifact", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.61, 0.855), UDim2.fromScale(0.29, 0.115), "Unequip", 12)
+	unequipArtifactButton.Activated:Connect(function()
+		if unequipArtifactButton.Active and latestProgression and latestProgression.EquippedArtifactId then
+			Remotes.get(Remotes.Names.UnequipArtifact):FireServer()
+		end
+	end)
+
+	local actionPanel = createPanelBox(root, "RunBoard", UDim2.fromScale(0.69, 0.18), UDim2.fromScale(0.27, 0.56), 0.12)
+	createText(actionPanel, "Title", "Next Run", UDim2.fromScale(0.12, 0.15), UDim2.fromScale(0.72, 0.09), 22)
+	runReadinessText = createText(actionPanel, "Readiness", "", UDim2.fromScale(0.12, 0.27), UDim2.fromScale(0.76, 0.17), 14)
+	campActionStatusText = createText(actionPanel, "CampStatus", "", UDim2.fromScale(0.12, 0.48), UDim2.fromScale(0.76, 0.12), 13)
+
+	campButton = createImageButton(actionPanel, "CampLevelBuy", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.18, 0.61), UDim2.fromScale(0.64, 0.12), "Upgrade Camp", 16)
+	campButton.Activated:Connect(function()
+		if campButton.Active then
+			Remotes.get(Remotes.Names.PurchaseCampLevel):FireServer()
+		end
+	end)
+
+	local startButton = createImageButton(actionPanel, "StartRun", campAssets.camp_button_primary_default_512x128, UDim2.fromScale(0.13, 0.78), UDim2.fromScale(0.74, 0.15), "Start Run", 21)
+	startButton.Activated:Connect(function()
+		Remotes.get(Remotes.Names.StartRun):FireServer()
+		hideCamp()
+	end)
+
+	if RunService:IsStudio() then
+		local resetProgressionButton = createImageButton(root, "ResetProgression", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.72, 0.78), UDim2.fromScale(0.21, 0.055), "Reset QA", 14)
+		resetProgressionButton.Activated:Connect(function()
+			Remotes.get(Remotes.Names.ResetMetaProgression):FireServer()
+		end)
+	end
+end
+
+function CampController.start()
+	buildCamp()
+	Remotes.get(Remotes.Names.MetaProgressionChanged).OnClientEvent:Connect(function(payload)
+		if type(payload) == "table" then
+			latestProgression = payload.snapshot
+			latestAppearanceStage = payload.appearanceStage
+			updateCamp()
+		end
+	end)
+	Remotes.get(Remotes.Names.RunEnded).OnClientEvent:Connect(function()
+		showCamp(true)
+	end)
+
+	local ok, payload = pcall(function()
+		return Remotes.get(Remotes.FunctionNames.GetMetaProgressionSnapshot):InvokeServer()
+	end)
+	if ok and type(payload) == "table" then
+		latestProgression = payload.snapshot
+		latestAppearanceStage = payload.appearanceStage
+	end
+	updateCamp()
+	showCamp(false)
+end
+
+return CampController

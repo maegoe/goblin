@@ -1,0 +1,4 @@
+interface:
+  display_name: "ElevenLabs Free SFX"
+  short_description: "Generate KAN-76 SFX candidates with ElevenLabs Free plan."
+  default_prompt: "Generate V1.0 Goblin SFX candidates for KAN-76 using ElevenLabs Free plan."

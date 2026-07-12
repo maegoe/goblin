@@ -1,13 +1,143 @@
 local WaveConfig = {
 	EnemyType = "BasicSlime",
-	InitialSpawnInterval = 2.2,
-	MinimumSpawnInterval = 0.55,
-	SpawnIntervalRampPerSecond = 0.012,
+	TargetSessionSeconds = 600,
+	InitialSpawnInterval = 2,
+	MinimumSpawnInterval = 0.6,
+	SpawnIntervalRampPerSecond = 0.0038,
 	SpawnRadius = 72,
 	SpawnRadiusJitter = 18,
-	MaxEnemies = 55,
+	MinimumSpawnDistanceFromPlayer = 48,
+	SpawnPositionAttempts = 12,
+	MaxEnemies = 76,
 	EnemiesPerSpawn = 1,
-	EnemiesPerSpawnEverySeconds = 45,
+	SwarmEvents = {
+		{
+			Id = "Swarm_090",
+			StartsAt = 90,
+			SpawnCount = 8,
+			BurstSize = 2,
+			BurstInterval = 0.25,
+			ExpiresAfter = 7,
+			MaxConcurrentEnemies = 42,
+			EnemyWeights = {
+				BasicSlime = 65,
+				FastSlime = 35,
+			},
+		},
+		{
+			Id = "Swarm_210",
+			StartsAt = 210,
+			SpawnCount = 12,
+			BurstSize = 3,
+			BurstInterval = 0.25,
+			ExpiresAfter = 8,
+			MaxConcurrentEnemies = 52,
+			EnemyWeights = {
+				BasicSlime = 55,
+				FastSlime = 35,
+				TankSlime = 10,
+			},
+		},
+		{
+			Id = "Swarm_360",
+			StartsAt = 360,
+			SpawnCount = 16,
+			BurstSize = 3,
+			BurstInterval = 0.22,
+			ExpiresAfter = 9,
+			MaxConcurrentEnemies = 60,
+			EnemyWeights = {
+				BasicSlime = 45,
+				FastSlime = 35,
+				TankSlime = 20,
+			},
+		},
+		{
+			Id = "Swarm_510",
+			StartsAt = 510,
+			SpawnCount = 20,
+			BurstSize = 4,
+			BurstInterval = 0.2,
+			ExpiresAfter = 10,
+			MaxConcurrentEnemies = 64,
+			EnemyWeights = {
+				BasicSlime = 35,
+				FastSlime = 35,
+				TankSlime = 30,
+			},
+		},
+	},
+	PressureStages = {
+		{
+			StartsAt = 0,
+			EnemiesPerSpawn = 1,
+			MaxEnemies = 22,
+			EnemyWeights = {
+				BasicSlime = 80,
+				FastSlime = 20,
+			},
+		},
+		{
+			StartsAt = 60,
+			EnemiesPerSpawn = 1,
+			MaxEnemies = 28,
+			EnemyWeights = {
+				BasicSlime = 70,
+				FastSlime = 25,
+				TankSlime = 5,
+			},
+		},
+		{
+			StartsAt = 120,
+			EnemiesPerSpawn = 2,
+			MaxEnemies = 36,
+			EnemyWeights = {
+				BasicSlime = 60,
+				FastSlime = 30,
+				TankSlime = 10,
+			},
+		},
+		{
+			StartsAt = 210,
+			EnemiesPerSpawn = 2,
+			MaxEnemies = 46,
+			EnemyWeights = {
+				BasicSlime = 50,
+				FastSlime = 35,
+				TankSlime = 15,
+			},
+		},
+		{
+			StartsAt = 300,
+			EnemiesPerSpawn = 3,
+			MaxEnemies = 58,
+			EnemyWeights = {
+				BasicSlime = 45,
+				FastSlime = 35,
+				TankSlime = 20,
+			},
+		},
+		{
+			StartsAt = 420,
+			EnemiesPerSpawn = 3,
+			MaxEnemies = 68,
+			EnemyWeights = {
+				BasicSlime = 35,
+				FastSlime = 35,
+				TankSlime = 30,
+			},
+		},
+		{
+			StartsAt = 540,
+			EnemiesPerSpawn = 4,
+			MaxEnemies = 76,
+			EnemyWeights = {
+				BasicSlime = 25,
+				FastSlime = 35,
+				TankSlime = 40,
+			},
+		},
+	},
 }
 
 return WaveConfig
