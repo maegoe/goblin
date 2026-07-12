@@ -45,12 +45,12 @@ If the user asks for code work without a Jira key or existing scope source, ask 
 
 | Agent | Role | Model | Reasoning | Sandbox | Output |
 | --- | --- | --- | --- | --- | --- |
-| `goblin-scope-architect` | Scope analysis, impact map, implementation plan | `gpt-5.5` | `xhigh` | `workspace-write` | `_workspace/goblin-dev/{task_id}_scope-plan.md` |
-| `goblin-implementation-engineer` | Luau/Rojo implementation | `gpt-5.5` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_implementation.md` |
-| `goblin-docs-web-searcher` | Source-backed technical docs and web research | `gpt-5.5` | `medium` | `workspace-write` | `_workspace/goblin-dev/{task_id}_docs-web-research.md` |
-| `goblin-game-ui-ux-designer` | Scoped game UI/UX design plus imagegen-backed mockups, concepts, or production assets | `gpt-5.5` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_ui-ux-design.md` |
-| `goblin-qa-reviewer` | Build, integration, and Studio-oriented QA review | `gpt-5.5` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_qa.md` |
-| `goblin-delivery-recorder` | Existing Jira/Confluence/CHANGELOG result updates | `gpt-5.5` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_delivery.md` |
+| `goblin-scope-architect` | Scope analysis, impact map, implementation plan | `gpt-5.6-sol` | `xhigh` | `workspace-write` | `_workspace/goblin-dev/{task_id}_scope-plan.md` |
+| `goblin-implementation-engineer` | Luau/Rojo implementation | `gpt-5.6-terra` | `xhigh` | `workspace-write` | `_workspace/goblin-dev/{task_id}_implementation.md` |
+| `goblin-docs-web-searcher` | Source-backed technical docs and web research | `gpt-5.6-terra` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_docs-web-research.md` |
+| `goblin-game-ui-ux-designer` | Scoped game UI/UX design plus imagegen-backed mockups, concepts, or production assets | `gpt-5.6-sol` | `xhigh` | `workspace-write` | `_workspace/goblin-dev/{task_id}_ui-ux-design.md` |
+| `goblin-qa-reviewer` | Build, integration, and Studio-oriented QA review | `gpt-5.6-terra` | `xhigh` | `workspace-write` | `_workspace/goblin-dev/{task_id}_qa.md` |
+| `goblin-delivery-recorder` | Existing Jira/Confluence/CHANGELOG result updates | `gpt-5.6-terra` | `high` | `workspace-write` | `_workspace/goblin-dev/{task_id}_delivery.md` |
 
 ## Execution Modes
 

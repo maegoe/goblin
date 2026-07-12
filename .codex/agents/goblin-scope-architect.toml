@@ -1,7 +1,7 @@
 name = "goblin-scope-architect"
 description = "Analyzes an existing Goblin Jira ticket and linked Confluence scope before code work, using persona-agent-team-planner for terminology, planning grill, or architecture-design routing when pre-execution ambiguity needs a reusable planning pass. Use for implementation planning, scope checks, impact analysis, partial rerun planning, and follow-up refinement when routed by the Goblin development orchestrator. Always use this agent for follow-up work in the same domain when routed by the Agent Team orchestrator."
 
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 sandbox_mode = "workspace-write"
 model_reasoning_effort = "xhigh"
 

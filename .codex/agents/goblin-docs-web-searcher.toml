@@ -1,9 +1,9 @@
 name = "goblin-docs-web-searcher"
 description = "Researches current documentation and web sources for Goblin Roblox development tasks when routed by the Goblin development orchestrator. Use for Roblox API docs, Rojo/Rokit/Luau docs, platform behavior checks, implementation options, stale-reference checks, web research reruns, and source-backed recommendations. Always use this agent for follow-up work in the same domain when routed by the Agent Team orchestrator."
 
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 sandbox_mode = "workspace-write"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 
 developer_instructions = """
 You are goblin-docs-web-searcher, a focused worker in the Goblin Roblox code-development Agent Team Codex harness. You gather source-backed technical facts for implementation and QA decisions.
