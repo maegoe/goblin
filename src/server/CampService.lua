@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CampConfig = require(Shared:WaitForChild("CampConfig"))
+local CampExchangeConfig = require(Shared:WaitForChild("CampExchangeConfig"))
 local FeedbackEvents = require(Shared:WaitForChild("FeedbackEvents"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
@@ -11,6 +12,7 @@ local MetaProgressionService = require(script.Parent:WaitForChild("MetaProgressi
 local CampService = {}
 
 local purchaseCampLevelRemote
+local exchangeCampMaterialsRemote
 
 local function getCampLevelCost(currentLevel)
 	local nextLevel = currentLevel + 1
@@ -19,6 +21,32 @@ local function getCampLevelCost(currentLevel)
 	end
 
 	return CampConfig.LevelCosts[nextLevel]
+end
+
+local function isPositiveInteger(value)
+	return type(value) == "number"
+		and value == value
+		and value < math.huge
+		and value > 0
+		and value % 1 == 0
+end
+
+local function getExchangeTier(tierId)
+	if type(tierId) ~= "string" then
+		return nil
+	end
+
+	local exchange = CampExchangeConfig[tierId]
+	if
+		type(exchange) ~= "table"
+		or exchange.Id ~= tierId
+		or not isPositiveInteger(exchange.CampMaterialCost)
+		or not isPositiveInteger(exchange.GrowthStoneReward)
+	then
+		return nil
+	end
+
+	return exchange
 end
 
 function CampService.purchaseCampLevel(player)
@@ -62,12 +90,67 @@ function CampService.purchaseCampLevel(player)
 	return true, nil
 end
 
+function CampService.exchangeCampMaterials(player, tierId)
+	local exchange = getExchangeTier(tierId)
+	if not exchange then
+		return false, "UnknownExchange"
+	end
+
+	local snapshot = MetaProgressionService.getSnapshot(player)
+	if not snapshot then
+		return false, "NoProgression"
+	end
+	if snapshot.CampMaterials < exchange.CampMaterialCost then
+		return false, "NotEnoughCampMaterials"
+	end
+
+	local saved = MetaProgressionService.update(player, function(progression)
+		local verifiedExchange = getExchangeTier(tierId)
+		if not verifiedExchange or progression.CampMaterials < verifiedExchange.CampMaterialCost then
+			return false
+		end
+
+		progression.CampMaterials -= verifiedExchange.CampMaterialCost
+		progression.GrowthStones += verifiedExchange.GrowthStoneReward
+	end)
+
+	if not saved then
+		return false, "SaveFallbackOrRejected"
+	end
+
+	print(string.format(
+		"[goblin][Camp] %s exchanged %d CampMaterials for %d GrowthStones",
+		player.Name,
+		exchange.CampMaterialCost,
+		exchange.GrowthStoneReward
+	))
+
+	return true, nil
+end
+
 function CampService.start()
 	purchaseCampLevelRemote = Remotes.get(Remotes.Names.PurchaseCampLevel)
 	purchaseCampLevelRemote.OnServerEvent:Connect(function(player)
 		local ok, reason = CampService.purchaseCampLevel(player)
 		if not ok then
 			print(string.format("[goblin][Camp] rejected camp level purchase for %s: %s", player.Name, tostring(reason)))
+		end
+	end)
+
+	exchangeCampMaterialsRemote = Remotes.get(Remotes.Names.ExchangeCampMaterials)
+	exchangeCampMaterialsRemote.OnServerEvent:Connect(function(player, tierId)
+		if typeof(tierId) ~= "string" then
+			return
+		end
+
+		local ok, reason = CampService.exchangeCampMaterials(player, tierId)
+		if not ok then
+			print(string.format(
+				"[goblin][Camp] rejected material exchange %s for %s: %s",
+				tostring(tierId),
+				player.Name,
+				tostring(reason)
+			))
 		end
 	end)
 end

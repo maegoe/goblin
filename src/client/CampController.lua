@@ -8,6 +8,7 @@ local ArtifactDefinitions = require(Shared:WaitForChild("ArtifactDefinitions"))
 local ArtifactUtils = require(Shared:WaitForChild("ArtifactUtils"))
 local Assets = require(Shared:WaitForChild("Assets"))
 local CampConfig = require(Shared:WaitForChild("CampConfig"))
+local CampExchangeConfig = require(Shared:WaitForChild("CampExchangeConfig"))
 local PersistentUpgradeDefinitions = require(Shared:WaitForChild("PersistentUpgradeDefinitions"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
@@ -32,6 +33,7 @@ local appearanceText
 local campButton
 local healthButton
 local attackButton
+local exchangeButtons = {}
 local artifactSlotButtons = {}
 local artifactSlotArtifactIds = {}
 local previewedArtifactId = nil
@@ -517,6 +519,15 @@ local function updateCamp()
 		setSecondaryButtonEnabled(campButton, false, "Upgrade Camp", "Max Camp")
 	end
 
+	for _, tierId in ipairs(CampExchangeConfig.Order) do
+		local exchange = CampExchangeConfig[tierId]
+		local button = exchangeButtons[tierId]
+		if exchange and button then
+			local canExchange = campMaterials >= exchange.CampMaterialCost
+			setSecondaryButtonEnabled(button, canExchange, exchange.ButtonText, exchange.DisabledText)
+		end
+	end
+
 	runReadinessText.Text = "Ready for your next run.\nSpend available upgrades first, then start."
 end
 
@@ -665,6 +676,33 @@ local function buildCamp()
 		Remotes.get(Remotes.Names.StartRun):FireServer()
 		hideCamp()
 	end)
+
+	local exchangePanel = createPanelBox(root, "ExchangeBoard", UDim2.fromScale(0.69, 0.76), UDim2.fromScale(0.27, 0.18), 0.12)
+	local exchangeTitle = createText(exchangePanel, "Title", "Material Exchange", UDim2.fromScale(0.08, 0.06), UDim2.fromScale(0.84, 0.2), 13)
+	exchangeTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+	exchangeButtons = {}
+	for index, tierId in ipairs(CampExchangeConfig.Order) do
+		local exchange = CampExchangeConfig[tierId]
+		if exchange then
+			local requestedTierId = tierId
+			local button = createImageButton(
+				exchangePanel,
+				"Exchange" .. tierId,
+				campAssets.camp_button_secondary_default_512x128,
+				UDim2.fromScale(index == 1 and 0.04 or 0.52, 0.36),
+				UDim2.fromScale(0.44, 0.5),
+				exchange.ButtonText,
+				10
+			)
+			exchangeButtons[tierId] = button
+			button.Activated:Connect(function()
+				if button.Active then
+					Remotes.get(Remotes.Names.ExchangeCampMaterials):FireServer(requestedTierId)
+				end
+			end)
+		end
+	end
 
 	if RunService:IsStudio() then
 		local qaPanel = createPanelBox(root, "QaTools", UDim2.fromScale(0.69, 0.055), UDim2.fromScale(0.27, 0.105), 0.12)

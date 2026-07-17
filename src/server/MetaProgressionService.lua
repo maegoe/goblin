@@ -160,9 +160,28 @@ local function createPayload(player)
 	}
 end
 
+local function acquireSaveSlot(player, session)
+	while session.saveInProgress do
+		task.wait()
+		if sessions[player] ~= session then
+			return false
+		end
+	end
+
+	session.saveInProgress = true
+	return true
+end
+
+local function releaseSaveSlot(session)
+	session.saveInProgress = false
+end
+
 local function saveSession(player)
 	local session = sessions[player]
 	if not session then
+		return false
+	end
+	if not acquireSaveSlot(player, session) then
 		return false
 	end
 
@@ -172,6 +191,7 @@ local function saveSession(player)
 
 	if not dataStore then
 		session.storageMode = "MemoryFallback"
+		releaseSaveSlot(session)
 		return true
 	end
 
@@ -184,11 +204,13 @@ local function saveSession(player)
 		session.storageMode = "MemoryFallback"
 		session.lastError = tostring(err)
 		warn("[goblin] MetaProgression save failed, using memory fallback: " .. tostring(err))
+		releaseSaveSlot(session)
 		return true
 	end
 
 	session.storageMode = "DataStore"
 	session.lastError = nil
+	releaseSaveSlot(session)
 	return true
 end
 
@@ -228,6 +250,7 @@ local function onPlayerAdded(player)
 		snapshot = snapshot,
 		storageMode = storageMode,
 		lastError = lastError,
+		saveInProgress = false,
 	}
 
 	memoryFallback[player.UserId] = cloneValue(snapshot)

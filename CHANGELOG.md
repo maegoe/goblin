@@ -5,15 +5,18 @@
 ### Added
 
 - KAN-124: Added a Roblox Studio-only QA resource grant that awards 250,000 Growth Stones and 1,000 Camp Materials through a server-authoritative Studio guard, while reusing the existing meta-progression save, publish, and camp UI refresh paths.
+- KAN-126: Added server-authoritative camp currency exchanges for 1,000 Camp Materials to 2,000 Growth Stones and 10,000 Camp Materials to 25,000 Growth Stones, with snapshot-driven button availability and immediate reuse of the existing meta-progression publish path.
 
 ### Changed
 
 - KAN-125: Added the shared player movement-speed cap at 28, filtered `Move Speed Up` from server-generated level-up choices when the current or rarity-specific next value would exceed that cap, and clamped upgrade application to the same source of truth.
+- KAN-126 review correction: Restricted exchange lookup to validated positive-integer tier records and serialized each player session's DataStore saves so rapid accepted exchanges cannot persist an older snapshot after a newer one.
 
 ### Validation
 
 - KAN-124 local validation passed: `rojo build default.project.json -o build/game.rbxl` and `git diff --check` passed. A separate code review identified that the initial 100,000 Growth Stone amount could not fully exercise one 50-level upgrade track; the final 250,000 amount covers both current 50-level tracks. Roblox Studio runtime QA remains pending because Studio MCP was unavailable in this session.
 - KAN-125 local validation and separate code review passed: exact-cap, over-cap, rarity-specific filtering, fallback candidate filling, artifact contribution, and pending-choice movement-lock paths were inspected; `rojo build default.project.json -o build/game.rbxl` and `git diff --check` passed. Roblox Studio repeated-choice runtime QA remains pending because Studio MCP was unavailable in this session.
+- KAN-126 local validation and correction review passed: normal, insufficient, unknown, metadata-only `Order`, repeated-save, fallback, and publish paths were inspected; `rojo build default.project.json -o build/game.rbxl` and `git diff --check` passed. Roblox Studio click, DataStore rejoin, and PC/mobile layout QA remain pending because Studio MCP was unavailable in this session.
 
 ## 2026-07-05
 
