@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-17
+
+### Added
+
+- KAN-126: Added server-authoritative camp currency exchanges for 1,000 Camp Materials to 2,000 Growth Stones and 10,000 Camp Materials to 25,000 Growth Stones, with snapshot-driven button availability and immediate reuse of the existing meta-progression publish path.
+
+### Changed
+
+- KAN-126 review correction: Restricted exchange lookup to validated positive-integer tier records and serialized each player session's DataStore saves so rapid accepted exchanges cannot persist an older snapshot after a newer one.
+
+### Validation
+
+- KAN-126 local validation and correction review passed: normal, insufficient, unknown, metadata-only `Order`, repeated-save, fallback, and publish paths were inspected; `rojo build default.project.json -o build/game.rbxl` and `git diff --check` passed. Roblox Studio click, DataStore rejoin, and PC/mobile layout QA remain pending because Studio MCP was unavailable in this session.
+
 ## 2026-07-05
 
 ### Changed
