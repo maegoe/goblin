@@ -4,6 +4,11 @@ local MAX_UPGRADE_LEVEL = 50
 local LEVELS_PER_CAMP_LEVEL = 5
 local FORMULA_LINEAR_STEP = 45
 local FORMULA_TRIANGULAR_STEP = 5
+local PERMANENT_GROWTH_VALUE_SCALAR = 1.011
+
+local function getAdjustedValuePerLevel(baseValue)
+	return math.floor((baseValue * PERMANENT_GROWTH_VALUE_SCALAR * 1000) + 0.5) / 1000
+end
 
 local function getGeneratedCost(baseCosts, level)
 	local baseLevel = #baseCosts
@@ -35,7 +40,9 @@ local PersistentUpgradeDefinitions = {
 		Id = "MaxHealth",
 		DisplayNameKey = "persistent.maxHealth",
 		StatKey = "MaxHealth",
-		ValuePerLevel = 5,
+		BaseValuePerLevel = 5,
+		ValueScalar = PERMANENT_GROWTH_VALUE_SCALAR,
+		ValuePerLevel = getAdjustedValuePerLevel(5),
 		MaxLevel = #GENERATED_MAX_HEALTH_COSTS,
 		Costs = GENERATED_MAX_HEALTH_COSTS,
 		CostFormula = "Levels 1-10 use base costs; levels 11-50 use base[10] + extra*45 + triangular(extra-1)*5.",
@@ -44,7 +51,9 @@ local PersistentUpgradeDefinitions = {
 		Id = "AttackDamage",
 		DisplayNameKey = "persistent.attackDamage",
 		StatKey = "AttackDamage",
-		ValuePerLevel = 1,
+		BaseValuePerLevel = 1,
+		ValueScalar = PERMANENT_GROWTH_VALUE_SCALAR,
+		ValuePerLevel = getAdjustedValuePerLevel(1),
 		MaxLevel = #GENERATED_ATTACK_DAMAGE_COSTS,
 		Costs = GENERATED_ATTACK_DAMAGE_COSTS,
 		CostFormula = "Levels 1-10 use base costs; levels 11-50 use base[10] + extra*45 + triangular(extra-1)*5.",
