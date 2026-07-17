@@ -13,6 +13,8 @@ local MetaProgressionService = {}
 
 local DATASTORE_NAME = "GoblinMetaProgressionV1"
 local KEY_PREFIX = "player:"
+local QA_GROWTH_STONE_GRANT_AMOUNT = 250000
+local QA_CAMP_MATERIAL_GRANT_AMOUNT = 1000
 
 local dataStore
 local progressionRemote
@@ -307,6 +309,28 @@ function MetaProgressionService.resetForQa(player)
 	return saved, cloneValue(session.snapshot)
 end
 
+function MetaProgressionService.grantResourcesForQa(player)
+	if not RunService:IsStudio() then
+		warn("[goblin] MetaProgression QA resource grant rejected outside Studio.")
+		return false, "StudioOnly"
+	end
+
+	if not sessions[player] then
+		return false, "NoSession"
+	end
+
+	local saved, snapshot = MetaProgressionService.update(player, function(progression)
+		progression.GrowthStones += QA_GROWTH_STONE_GRANT_AMOUNT
+		progression.CampMaterials += QA_CAMP_MATERIAL_GRANT_AMOUNT
+	end)
+
+	if not saved then
+		return false, "UpdateRejected"
+	end
+
+	return true, snapshot
+end
+
 function MetaProgressionService.start()
 	if started then
 		return
@@ -316,6 +340,16 @@ function MetaProgressionService.start()
 	progressionRemote = Remotes.get(Remotes.Names.MetaProgressionChanged)
 	Remotes.get(Remotes.Names.ResetMetaProgression).OnServerEvent:Connect(function(player)
 		MetaProgressionService.resetForQa(player)
+	end)
+	Remotes.get(Remotes.Names.GrantMetaProgressionResources).OnServerEvent:Connect(function(player)
+		local ok, reason = MetaProgressionService.grantResourcesForQa(player)
+		if not ok then
+			print(string.format(
+				"[goblin] MetaProgression QA resource grant rejected for %s: %s",
+				player.Name,
+				tostring(reason)
+			))
+		end
 	end)
 	Remotes.get(Remotes.FunctionNames.GetMetaProgressionSnapshot).OnServerInvoke = function(player)
 		return createPayload(player)

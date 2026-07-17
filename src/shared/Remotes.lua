@@ -12,6 +12,7 @@ local RemoteNames = {
 	EquipArtifact = "EquipArtifact",
 	UnequipArtifact = "UnequipArtifact",
 	ResetMetaProgression = "ResetMetaProgression",
+	GrantMetaProgressionResources = "GrantMetaProgressionResources",
 	FeedbackAudio = "FeedbackAudio",
 	LevelUpChoices = "LevelUpChoices",
 	SelectUpgrade = "SelectUpgrade",
