@@ -14,6 +14,7 @@ local elapsed = 0
 local spawnAccumulator = 0
 local hadAlivePlayers = false
 local firedSwarmEvents = {}
+local clusterEventNextTimes = {}
 local pendingSwarm = nil
 
 local function getCurrentPressureStage()
@@ -170,9 +171,12 @@ local function spawnNearPlayer(player, swarmEvent)
 
 	local enemy = EnemyService.spawn(chooseEnemyType(swarmEvent and swarmEvent.EnemyWeights), getSpawnPosition(root.Position), elapsed)
 	if enemy and swarmEvent then
-		enemy:SetAttribute("SpawnSource", "SwarmEvent")
+		enemy:SetAttribute("SpawnSource", swarmEvent.SpawnSource or "SwarmEvent")
 		enemy:SetAttribute("SwarmEventId", swarmEvent.Id or "Swarm")
-		enemy:SetAttribute("SwarmScheduledAt", swarmEvent.StartsAt or elapsed)
+		enemy:SetAttribute("SwarmScheduledAt", swarmEvent.LastScheduledAt or swarmEvent.StartsAt or elapsed)
+		if type(swarmEvent.Interval) == "number" then
+			enemy:SetAttribute("SwarmRepeatInterval", swarmEvent.Interval)
+		end
 	end
 
 	return enemy
@@ -180,7 +184,24 @@ end
 
 local function resetSwarmState()
 	firedSwarmEvents = {}
+	clusterEventNextTimes = {}
 	pendingSwarm = nil
+end
+
+local function createPendingSwarm(eventConfig)
+	local spawnCount = getPositiveInteger(eventConfig.SpawnCount, 0)
+	if spawnCount <= 0 then
+		return false
+	end
+
+	pendingSwarm = {
+		Config = eventConfig,
+		Remaining = spawnCount,
+		Elapsed = 0,
+		Accumulator = 0,
+	}
+
+	return true
 end
 
 local function startDueSwarmEvent()
@@ -196,17 +217,51 @@ local function startDueSwarmEvent()
 	for index, eventConfig in ipairs(swarmEvents) do
 		if not firedSwarmEvents[index] and type(eventConfig.StartsAt) == "number" and elapsed >= eventConfig.StartsAt then
 			firedSwarmEvents[index] = true
+			createPendingSwarm(eventConfig)
+			return
+		end
+	end
+end
 
-			local spawnCount = getPositiveInteger(eventConfig.SpawnCount, 0)
-			if spawnCount > 0 then
-				pendingSwarm = {
-					Config = eventConfig,
-					Remaining = spawnCount,
-					Elapsed = 0,
-					Accumulator = 0,
-				}
+local function startDueMicroClusterEvent()
+	if pendingSwarm then
+		return
+	end
+
+	local clusterEvents = WaveConfig.MicroClusterEvents
+	if type(clusterEvents) ~= "table" then
+		return
+	end
+
+	for index, eventConfig in ipairs(clusterEvents) do
+		local startsAt = eventConfig.StartsAt
+		if type(startsAt) ~= "number" then
+			continue
+		end
+
+		local endsAt = eventConfig.EndsAt
+		if elapsed < startsAt then
+			continue
+		end
+		if type(endsAt) == "number" and elapsed > endsAt then
+			clusterEventNextTimes[index] = math.huge
+			continue
+		end
+
+		local nextTime = clusterEventNextTimes[index]
+		if type(nextTime) ~= "number" then
+			nextTime = startsAt
+			clusterEventNextTimes[index] = nextTime
+		end
+
+		if elapsed >= nextTime then
+			eventConfig.LastScheduledAt = nextTime
+			if createPendingSwarm(eventConfig) then
+				local interval = getPositiveNumber(eventConfig.Interval, 30)
+				clusterEventNextTimes[index] = elapsed + interval
+			else
+				eventConfig.LastScheduledAt = nil
 			end
-
 			return
 		end
 	end
@@ -279,6 +334,7 @@ function WaveService.start()
 		elapsed += deltaTime
 		spawnAccumulator += deltaTime
 		startDueSwarmEvent()
+		startDueMicroClusterEvent()
 		processPendingSwarm(deltaTime, alivePlayers)
 
 		if spawnAccumulator < getSpawnInterval() then

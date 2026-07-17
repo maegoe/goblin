@@ -3,11 +3,11 @@ local EnemyStatScaling = {}
 EnemyStatScaling.Config = {
 	TargetSessionSeconds = 600,
 	GraceSeconds = 30,
-	CurveExponent = 1.1,
+	CurveExponent = 1.05,
 	MaxMultipliers = {
-		MaxHealth = 2.2,
-		MoveSpeed = 1.28,
-		ContactDamage = 1.65,
+		MaxHealth = 2.6,
+		MoveSpeed = 1.36,
+		ContactDamage = 1.85,
 	},
 }
 
