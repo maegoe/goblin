@@ -13,7 +13,8 @@ local MetaProgressionService = {}
 
 local DATASTORE_NAME = "GoblinMetaProgressionV1"
 local KEY_PREFIX = "player:"
-local QA_RESOURCE_GRANT_AMOUNT = 100000
+local QA_GROWTH_STONE_GRANT_AMOUNT = 250000
+local QA_CAMP_MATERIAL_GRANT_AMOUNT = 1000
 
 local dataStore
 local progressionRemote
@@ -319,8 +320,8 @@ function MetaProgressionService.grantResourcesForQa(player)
 	end
 
 	local saved, snapshot = MetaProgressionService.update(player, function(progression)
-		progression.GrowthStones += QA_RESOURCE_GRANT_AMOUNT
-		progression.CampMaterials += QA_RESOURCE_GRANT_AMOUNT
+		progression.GrowthStones += QA_GROWTH_STONE_GRANT_AMOUNT
+		progression.CampMaterials += QA_CAMP_MATERIAL_GRANT_AMOUNT
 	end)
 
 	if not saved then
