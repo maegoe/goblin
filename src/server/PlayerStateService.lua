@@ -132,6 +132,22 @@ local function requiresNumericValue(definition)
 		or definition.StatKey ~= nil
 end
 
+local function canApplyMoveSpeedChoice(state, definition, value)
+	if definition.StatKey ~= "MoveSpeed" then
+		return true
+	end
+
+	if not isFiniteNumber(state.MoveSpeed) or not isFiniteNumber(PlayerDefaults.MoveSpeedCap) then
+		return false
+	end
+
+	if value == nil then
+		return state.MoveSpeed < PlayerDefaults.MoveSpeedCap
+	end
+
+	return isFiniteNumber(value) and state.MoveSpeed + value <= PlayerDefaults.MoveSpeedCap
+end
+
 local function getUpgradeValue(definition, rarity)
 	local rarityValues = definition.RarityValues
 	if type(rarityValues) == "table" and isFiniteNumber(rarityValues[rarity]) then
@@ -213,7 +229,7 @@ local function formatDescription(definition, value)
 	return nil
 end
 
-local function createUpgradeChoice(upgradeId)
+local function createUpgradeChoice(state, upgradeId)
 	local definition = UpgradeDefinitions[upgradeId]
 	if not definition then
 		return nil
@@ -228,6 +244,9 @@ local function createUpgradeChoice(upgradeId)
 	local rarityLabel, rarityColor = getRarityDisplay(rarity)
 	local value = getUpgradeValue(definition, rarity)
 	if requiresNumericValue(definition) and not isFiniteNumber(value) then
+		return nil
+	end
+	if not canApplyMoveSpeedChoice(state, definition, value) then
 		return nil
 	end
 
@@ -252,7 +271,12 @@ local function getRandomUpgradeChoices(state)
 	local seenPoolIds = {}
 	for _, upgradeId in ipairs(UpgradeDefinitions.Order) do
 		local definition = UpgradeDefinitions[upgradeId]
-		if definition and not seenPoolIds[upgradeId] and canOfferUpgrade(state, definition) then
+		if
+			definition
+			and not seenPoolIds[upgradeId]
+			and canOfferUpgrade(state, definition)
+			and canApplyMoveSpeedChoice(state, definition, nil)
+		then
 			seenPoolIds[upgradeId] = true
 			table.insert(pool, upgradeId)
 		end
@@ -270,7 +294,7 @@ local function getRandomUpgradeChoices(state)
 			break
 		end
 
-		local choice = createUpgradeChoice(upgradeId)
+		local choice = createUpgradeChoice(state, upgradeId)
 		if choice and not selectedIds[choice.id] then
 			selectedIds[choice.id] = true
 			table.insert(choices, choice)
@@ -345,6 +369,7 @@ local function createState(player, runActive)
 		ActiveCharacter = nil,
 	}
 	ArtifactEffectService.applyEquippedArtifact(state, progression)
+	state.MoveSpeed = math.min(state.MoveSpeed, PlayerDefaults.MoveSpeedCap)
 
 	return state
 end
@@ -628,8 +653,9 @@ local function applyUpgradeDefinition(state, definition, value)
 	if isFiniteNumber(definition.MinValue) then
 		nextValue = math.max(definition.MinValue, nextValue)
 	end
-	if isFiniteNumber(definition.MaxValue) then
-		nextValue = math.min(definition.MaxValue, nextValue)
+	local maxValue = definition.StatKey == "MoveSpeed" and PlayerDefaults.MoveSpeedCap or definition.MaxValue
+	if isFiniteNumber(maxValue) then
+		nextValue = math.min(maxValue, nextValue)
 	end
 
 	state[definition.StatKey] = nextValue
