@@ -1,6 +1,7 @@
 local PlayerDefaults = {
 	MaxHealth = 100,
 	MoveSpeed = 18,
+	MoveSpeedCap = 28,
 	AttackDamage = 18,
 	AttackInterval = 1.05,
 	AttackRange = 48,
