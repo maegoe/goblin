@@ -125,6 +125,19 @@ local function isFiniteNumber(value)
 	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function clampMoveSpeed(value)
+	if not isFiniteNumber(value) then
+		return value
+	end
+
+	local cap = PlayerDefaults.MoveSpeedCap
+	if not isFiniteNumber(cap) then
+		return value
+	end
+
+	return math.min(value, cap)
+end
+
 local function requiresNumericValue(definition)
 	return definition.EffectType == "IncreaseMaxHealth"
 		or definition.EffectType == "Heal"
@@ -369,7 +382,7 @@ local function createState(player, runActive)
 		ActiveCharacter = nil,
 	}
 	ArtifactEffectService.applyEquippedArtifact(state, progression)
-	state.MoveSpeed = math.min(state.MoveSpeed, PlayerDefaults.MoveSpeedCap)
+	state.MoveSpeed = clampMoveSpeed(state.MoveSpeed)
 
 	return state
 end
@@ -653,9 +666,11 @@ local function applyUpgradeDefinition(state, definition, value)
 	if isFiniteNumber(definition.MinValue) then
 		nextValue = math.max(definition.MinValue, nextValue)
 	end
-	local maxValue = definition.StatKey == "MoveSpeed" and PlayerDefaults.MoveSpeedCap or definition.MaxValue
-	if isFiniteNumber(maxValue) then
-		nextValue = math.min(maxValue, nextValue)
+	if isFiniteNumber(definition.MaxValue) then
+		nextValue = math.min(definition.MaxValue, nextValue)
+	end
+	if definition.StatKey == "MoveSpeed" then
+		nextValue = clampMoveSpeed(nextValue)
 	end
 
 	state[definition.StatKey] = nextValue
