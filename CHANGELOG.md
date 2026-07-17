@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-17
+
+### Changed
+
+- KAN-125: Added the shared player movement-speed cap at 28, filtered `Move Speed Up` from server-generated level-up choices when the current or rarity-specific next value would exceed that cap, and clamped upgrade application to the same source of truth.
+
+### Validation
+
+- KAN-125 local validation and separate code review passed: exact-cap, over-cap, rarity-specific filtering, fallback candidate filling, artifact contribution, and pending-choice movement-lock paths were inspected; `rojo build default.project.json -o build/game.rbxl` and `git diff --check` passed. Roblox Studio repeated-choice runtime QA remains pending because Studio MCP was unavailable in this session.
+
 ## 2026-07-05
 
 ### Changed
