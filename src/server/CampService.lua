@@ -23,6 +23,32 @@ local function getCampLevelCost(currentLevel)
 	return CampConfig.LevelCosts[nextLevel]
 end
 
+local function isPositiveInteger(value)
+	return type(value) == "number"
+		and value == value
+		and value < math.huge
+		and value > 0
+		and value % 1 == 0
+end
+
+local function getExchangeTier(tierId)
+	if type(tierId) ~= "string" then
+		return nil
+	end
+
+	local exchange = CampExchangeConfig[tierId]
+	if
+		type(exchange) ~= "table"
+		or exchange.Id ~= tierId
+		or not isPositiveInteger(exchange.CampMaterialCost)
+		or not isPositiveInteger(exchange.GrowthStoneReward)
+	then
+		return nil
+	end
+
+	return exchange
+end
+
 function CampService.purchaseCampLevel(player)
 	local snapshot = MetaProgressionService.getSnapshot(player)
 	if not snapshot then
@@ -65,7 +91,7 @@ function CampService.purchaseCampLevel(player)
 end
 
 function CampService.exchangeCampMaterials(player, tierId)
-	local exchange = CampExchangeConfig[tierId]
+	local exchange = getExchangeTier(tierId)
 	if not exchange then
 		return false, "UnknownExchange"
 	end
@@ -79,7 +105,7 @@ function CampService.exchangeCampMaterials(player, tierId)
 	end
 
 	local saved = MetaProgressionService.update(player, function(progression)
-		local verifiedExchange = CampExchangeConfig[tierId]
+		local verifiedExchange = getExchangeTier(tierId)
 		if not verifiedExchange or progression.CampMaterials < verifiedExchange.CampMaterialCost then
 			return false
 		end
