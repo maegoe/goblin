@@ -667,9 +667,18 @@ local function buildCamp()
 	end)
 
 	if RunService:IsStudio() then
-		local resetProgressionButton = createImageButton(root, "ResetProgression", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.72, 0.78), UDim2.fromScale(0.21, 0.055), "Reset QA", 14)
+		local qaPanel = createPanelBox(root, "QaTools", UDim2.fromScale(0.69, 0.055), UDim2.fromScale(0.27, 0.105), 0.12)
+		local qaTitle = createText(qaPanel, "Title", "Studio QA Tools", UDim2.fromScale(0.06, 0.04), UDim2.fromScale(0.88, 0.28), 12)
+		qaTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+		local resetProgressionButton = createImageButton(qaPanel, "ResetProgression", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.04, 0.39), UDim2.fromScale(0.44, 0.5), "Reset QA", 11)
 		resetProgressionButton.Activated:Connect(function()
 			Remotes.get(Remotes.Names.ResetMetaProgression):FireServer()
+		end)
+
+		local grantResourcesButton = createImageButton(qaPanel, "GrantResources", campAssets.camp_button_secondary_default_512x128, UDim2.fromScale(0.52, 0.39), UDim2.fromScale(0.44, 0.5), "Grant Resources", 11)
+		grantResourcesButton.Activated:Connect(function()
+			Remotes.get(Remotes.Names.GrantMetaProgressionResources):FireServer()
 		end)
 	end
 end
